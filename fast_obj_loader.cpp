@@ -26,16 +26,20 @@ obj *loadObj(char *filename)
     fread(memoryfile,filelength,1,f);
     size_t linecount=0;
     unsigned int numverts=0;
-#pragma omp parallel for reduction(+:linecount,numverts)
+    unsigned int numfaces=0;
+#pragma omp parallel for reduction(+:linecount,numverts,numfaces)
     for(size_t i=0;i<filelength;i++)
     {
         if(memoryfile[i]=='\n')
             linecount++;
         else if(memoryfile[i]=='v')
             numverts++;
+        else if(memoryfile[i]=='f')
+            numfaces++;
     }
     printf("lines:%i\n",linecount);
     printf("numverts:%i\n",numverts);
+    printf("numfaces:%i\n",numfaces);
     delete [] memoryfile;
 
     fclose(f);
