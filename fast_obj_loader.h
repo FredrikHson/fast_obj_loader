@@ -34,6 +34,6 @@ struct obj
     }
 };
 
-obj *loadObj(char *filename);
+obj *loadObj(const char *filename);
 
 #endif

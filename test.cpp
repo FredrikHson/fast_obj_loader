@@ -10,7 +10,7 @@ int main(int argc, char *argv[])
     clock_gettime(CLOCK_REALTIME, &start );
     double calltime;
 
-    obj *testmesh=loadObj("../subdivisionwithtoes.obj");
+    obj *testmesh=loadObj("../xyzrgb_dragon.obj");
 
     clock_gettime(CLOCK_REALTIME, &stop );
     calltime=(stop.tv_sec-start.tv_sec)+(stop.tv_nsec-start.tv_nsec)/1000000000.0;
