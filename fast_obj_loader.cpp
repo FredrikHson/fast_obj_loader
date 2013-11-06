@@ -44,7 +44,6 @@ obj *loadObj(const char *filename)
     size_t *numtmpends;
     size_t *lineends;
     int numEnds=0;
-    lineends.SetContainer_size(8192);
     #pragma omp parallel
     {
         numthreads=omp_get_num_threads();
@@ -52,7 +51,8 @@ obj *loadObj(const char *filename)
 
         #pragma omp single
         {
-            tmpends=new FastDynamic<int>[numthreads];
+            tmpends=new FastDynamic<unsigned int>[numthreads];
+            numtmpends=new size_t[numthreads];
             for(int i=0;i<numthreads;i++)
                 tmpends[i].SetContainer_size(8192);
         }
