@@ -72,8 +72,18 @@ obj *loadObj(const char *filename)
         #pragma omp single
         {
             lineends=new size_t[numEnds+1];
-
             lineends[numEnds+1]=filelength;
+        }
+        #pragma omp for
+        for(int i=0;i<numthreads;i++)
+        {
+            int offset=0;
+            for(int j=0;j<i;j++)
+            {
+                offset+=numtmpends[j];
+            }
+            // här ----------------------------------------
+            tmpends[0]
         }
     }
     printf("lines:%i\n",linecount);
