@@ -1,6 +1,6 @@
 #ifndef _FASTDYNAMIC_H
 #define _FASTDYNAMIC_H
-
+#include <memory.h>
 #define DEFAULT_CONTAINER_SIZE 4 // use larger numbers when using small objects or you will run out of memory quickly
 
 template <class T>
@@ -88,11 +88,14 @@ public:
     {
         size_t numBuckets=count/bucket_size;
         size_t leftover=count%bucket_size;
-
+        T *buf=staticarray;
+        size_t Bsize=bucket_size*sizeof(T);
         for(size_t i=0;i<numBuckets;i++)
         {
-
+            memcpy(buf,(*buckets[i]).contents,Bsize);
+            buf+=bucket_size;
         }
+        memcpy(buf,(*buckets[bucket_count-1]).contents,sizeof(T)*leftover);
 
     }
 };

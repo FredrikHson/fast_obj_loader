@@ -82,14 +82,16 @@ obj *loadObj(const char *filename)
             {
                 offset+=numtmpends[j];
             }
-            // här ----------------------------------------
-    //        tmpends[0]
+            tmpends[i].CopyToStatic(&lineends[offset],numtmpends[i]);
+        }
+        #pragma omp single
+        {
+            delete [] numtmpends;
+            delete [] tmpends;
         }
     }
-
-    delete [] numtmpends;
     delete [] lineends;
-    printf("lines:%i\n",linecount);
+    printf("lines:%zu\n",linecount);
     printf("numthreads:%i\n",numthreads);
 
     clock_gettime(CLOCK_REALTIME, &stop );

@@ -33,6 +33,11 @@ struct obj
         numverts=0;
         numfaces=0;
     }
+    ~obj()
+    {
+        if(verts)
+            delete [] verts;
+    }
 };
 
 obj *loadObj(const char *filename);
