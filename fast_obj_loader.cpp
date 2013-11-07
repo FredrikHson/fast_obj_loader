@@ -29,7 +29,7 @@ obj *loadObj(const char *filename)
     fseek(f,0,SEEK_END);
     size_t filelength=ftell(f);
     fseek(f,0,SEEK_SET);
-    printf("filesize=%d bytes\n",filelength);
+    printf("filesize=%zu bytes\n",filelength);
     char *memoryfile=new char[filelength];
 
     fread(memoryfile,filelength,1,f);
@@ -83,9 +83,12 @@ obj *loadObj(const char *filename)
                 offset+=numtmpends[j];
             }
             // här ----------------------------------------
-            tmpends[0]
+    //        tmpends[0]
         }
     }
+
+    delete [] numtmpends;
+    delete [] lineends;
     printf("lines:%i\n",linecount);
     printf("numthreads:%i\n",numthreads);
 

@@ -22,8 +22,7 @@ public:
         buckets[0]=new bucket;
         (*buckets[0]).contents=new T[bucket_size];
     }
-    void CopyToStatic(T *static)ͱ
-        FastDynamic()
+    FastDynamic()
     {
         this->bucket_size=DEFAULT_CONTAINER_SIZE;
         bucket_count=1;
@@ -85,7 +84,7 @@ public:
     {
         return (*buckets[bucketnum]).contents;
     }
-    void CopyToStatic(T *static, size_t count)
+    void CopyToStatic(T *staticarray, size_t count)
     {
         size_t numBuckets=count/bucket_size;
         size_t leftover=count%bucket_size;

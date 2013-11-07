@@ -31,6 +31,7 @@ struct obj
     {
         verts=0;
         numverts=0;
+        numfaces=0;
     }
 };
 
