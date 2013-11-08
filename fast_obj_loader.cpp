@@ -3,9 +3,10 @@
 #include <stdlib.h>
 #include "fastdynamic.h"
 #ifdef _OPENMP
-    #include <omp.h>
+#include <omp.h>
 #endif
 #include <time.h>
+#include <string.h>
 //bool getcstr(char *out,unsigned short bufflen,char *input,size_t &len) // bufflen = output buffer size // input has to be a copy of the original pointer
 //{
 //    if(len<=0)
@@ -44,7 +45,8 @@ obj *loadObj(const char *filename)
     size_t *numtmpends;
     size_t *lineends;
     int numEnds=0;
-    #pragma omp parallel
+    size_t numverts=0;
+    #pragma omp parallel // first get line ends so they can be parsed in parallel
     {
         numthreads=omp_get_num_threads();
         int threadid=omp_get_thread_num();
@@ -63,6 +65,7 @@ obj *loadObj(const char *filename)
             //printf("%i\n",i);
             if(memoryfile[i]=='\n')
             {
+//                memoryfile[i]=0;
                 tmpends[threadid][numEnds]=i;
                 numtmpends[threadid]++;
                 numEnds++;
@@ -90,9 +93,40 @@ obj *loadObj(const char *filename)
             delete [] tmpends;
         }
     }
+    FastDynamic<vec3> *tmpverts;
+    size_t *numtmpverts;
+    #pragma omp parallel
+    {
+        // read verts for now
+        numthreads=omp_get_num_threads();
+        int threadid=omp_get_thread_num();
+
+        #pragma omp single
+        {
+            tmpverts=new FastDynamic<vec3>[numthreads];
+            numtmpverts=new size_t[numthreads];
+            for(int i=0;i<numthreads;i++)
+                tmpverts[i].SetContainer_size(8192);
+        }
+
+        #pragma omp single
+        {
+            // read first line here
+        }
+        #pragma omp for reduction(+:numverts)
+        for (int i = 1; i < numEnds; i++)
+        {
+            char line[1024]={0};
+            memcpy(&line,&memoryfile[lineends[i-1]+1],lineends[i]-lineends[i-1]-1);
+            if(line[0]=='v' && line[1]==' ')
+                numverts++;
+        }
+    }
+
     delete [] lineends;
     printf("lines:%zu\n",linecount);
     printf("numthreads:%i\n",numthreads);
+    printf("numverts:%i\n",numverts);
 
     clock_gettime(CLOCK_REALTIME, &stop );
     calltime=(stop.tv_sec-start.tv_sec)+(stop.tv_nsec-start.tv_nsec)/1000000000.0;
