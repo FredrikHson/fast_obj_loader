@@ -56,7 +56,10 @@ obj *loadObj(const char *filename)
             tmpends=new FastDynamic<unsigned int>[numthreads];
             numtmpends=new size_t[numthreads];
             for(int i=0;i<numthreads;i++)
+            {
                 tmpends[i].SetContainer_size(8192);
+                numtmpends[i]=0;
+            }
         }
 
         #pragma omp for reduction(+:linecount,numEnds)
@@ -106,7 +109,10 @@ obj *loadObj(const char *filename)
             tmpverts=new FastDynamic<vec3>[numthreads];
             numtmpverts=new size_t[numthreads];
             for(int i=0;i<numthreads;i++)
+            {
                 tmpverts[i].SetContainer_size(8192);
+                numtmpverts[i]=0;
+            }
         }
 
         #pragma omp single
@@ -119,7 +125,29 @@ obj *loadObj(const char *filename)
             char line[1024]={0};
             memcpy(&line,&memoryfile[lineends[i-1]+1],lineends[i]-lineends[i-1]-1);
             if(line[0]=='v' && line[1]==' ')
+            {
+                vec3 vert;
+                sscanf(line,"v %f %f %f",&vert.x,&vert.y,&vert.z);
+                tmpverts[threadid][numtmpverts[threadid]]=vert;
+                numtmpverts[threadid]++;
                 numverts++;
+            }
+        }
+        #pragma omp single
+        {
+            output->verts=new vec3[numverts];
+        }
+        #pragma omp for
+        for(int i=0;i<numthreads;i++)
+        {
+            int offset=0;
+            for(int j=0;j<i;j++)
+            {
+                offset+=numtmpverts[j];
+            }
+            printf("thread:%i offset:%i numtmpverts:%i numverts:%i addr:%x\n",i,offset,numtmpverts[i],numverts,&output->verts[offset]);
+            tmpverts[i].CopyToStatic(&(output->verts[offset]),numtmpverts[i]);
+  //          printf("thread:%i offset:%i numtmpverts:%i addr:%x\n",i,offset,numtmpverts[i],&output->verts[offset]);
         }
     }
 

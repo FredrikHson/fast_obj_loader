@@ -86,6 +86,12 @@ public:
     }
     void CopyToStatic(T *staticarray, size_t count)
     {
+        if(count==0)
+        {
+            printf("tried to copy nothing\n");
+            return;
+
+        }
         size_t numBuckets=count/bucket_size;
         size_t leftover=count%bucket_size;
         T *buf=staticarray;
