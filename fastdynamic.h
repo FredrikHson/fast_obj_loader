@@ -22,6 +22,14 @@ public:
         buckets[0]=new bucket;
         (*buckets[0]).contents=new T[bucket_size];
     }
+    FastDynamic(const FastDynamic<T> &old)
+    {
+        this->bucket_size=bucket_size;
+        bucket_count=1;
+        buckets=new bucket*[1];
+        buckets[0]=new bucket;
+        (*buckets[0]).contents=new T[bucket_size];
+    }
     FastDynamic()
     {
         this->bucket_size=DEFAULT_CONTAINER_SIZE;
@@ -87,11 +95,7 @@ public:
     void CopyToStatic(T *staticarray, size_t count)
     {
         if(count==0)
-        {
-            printf("tried to copy nothing\n");
             return;
-
-        }
         size_t numBuckets=count/bucket_size;
         size_t leftover=count%bucket_size;
         T *buf=staticarray;

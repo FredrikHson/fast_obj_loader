@@ -41,13 +41,13 @@ obj *loadObj(const char *filename)
 
     size_t linecount=0;
     int numthreads=0;
-    FastDynamic<size_t> *tmpends;
-    size_t *numtmpends;
-    size_t *lineends;
     int numEnds=0;
     size_t numverts=0;
+    size_t *lineends;
     #pragma omp parallel // first get line ends so they can be parsed in parallel
     {
+        FastDynamic<size_t> *tmpends;
+        size_t *numtmpends;
         numthreads=omp_get_num_threads();
         int threadid=omp_get_thread_num();
 
@@ -68,7 +68,6 @@ obj *loadObj(const char *filename)
             //printf("%i\n",i);
             if(memoryfile[i]=='\n')
             {
-//                memoryfile[i]=0;
                 tmpends[threadid][numEnds]=i;
                 numtmpends[threadid]++;
                 numEnds++;
@@ -96,10 +95,10 @@ obj *loadObj(const char *filename)
             delete [] tmpends;
         }
     }
-    FastDynamic<vec3> *tmpverts;
-    size_t *numtmpverts;
     #pragma omp parallel
     {
+        FastDynamic<vec3> *tmpverts;
+        size_t *numtmpverts;
         // read verts for now
         numthreads=omp_get_num_threads();
         int threadid=omp_get_thread_num();
@@ -145,16 +144,20 @@ obj *loadObj(const char *filename)
             {
                 offset+=numtmpverts[j];
             }
-            printf("thread:%i offset:%i numtmpverts:%i numverts:%i addr:%x\n",i,offset,numtmpverts[i],numverts,&output->verts[offset]);
             tmpverts[i].CopyToStatic(&(output->verts[offset]),numtmpverts[i]);
-  //          printf("thread:%i offset:%i numtmpverts:%i addr:%x\n",i,offset,numtmpverts[i],&output->verts[offset]);
+        }
+
+        #pragma omp single
+        {
+            delete [] tmpverts;
+            delete [] numtmpverts;
         }
     }
 
     delete [] lineends;
     printf("lines:%zu\n",linecount);
     printf("numthreads:%i\n",numthreads);
-    printf("numverts:%i\n",numverts);
+    printf("numverts:%zu\n",numverts);
 
     clock_gettime(CLOCK_REALTIME, &stop );
     calltime=(stop.tv_sec-start.tv_sec)+(stop.tv_nsec-start.tv_nsec)/1000000000.0;
