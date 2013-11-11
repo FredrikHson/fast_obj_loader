@@ -30,7 +30,7 @@ obj *loadObj(const char *filename)
     fseek(f,0,SEEK_END);
     size_t filelength=ftell(f);
     fseek(f,0,SEEK_SET);
-    printf("filesize=%zu bytes\n",filelength);
+    //printf("filesize=%zu bytes\n",filelength);
     char *memoryfile=new char[filelength];
 
     fread(memoryfile,filelength,1,f);
@@ -44,10 +44,10 @@ obj *loadObj(const char *filename)
     int numEnds=0;
     size_t numverts=0;
     size_t *lineends;
+    FastDynamic<size_t> *tmpends;
+    size_t *numtmpends;
     #pragma omp parallel // first get line ends so they can be parsed in parallel
     {
-        FastDynamic<size_t> *tmpends;
-        size_t *numtmpends;
         numthreads=omp_get_num_threads();
         int threadid=omp_get_thread_num();
 
@@ -95,10 +95,10 @@ obj *loadObj(const char *filename)
             delete [] tmpends;
         }
     }
+    FastDynamic<vec3> *tmpverts;
+    size_t *numtmpverts;
     #pragma omp parallel
     {
-        FastDynamic<vec3> *tmpverts;
-        size_t *numtmpverts;
         // read verts for now
         numthreads=omp_get_num_threads();
         int threadid=omp_get_thread_num();
@@ -126,7 +126,7 @@ obj *loadObj(const char *filename)
             if(line[0]=='v' && line[1]==' ')
             {
                 vec3 vert;
-                sscanf(line,"v %f %f %f",&vert.x,&vert.y,&vert.z);
+                int n=sscanf(line,"v %99f %99f %99f",&vert.x,&vert.y,&vert.z);
                 tmpverts[threadid][numtmpverts[threadid]]=vert;
                 numtmpverts[threadid]++;
                 numverts++;
@@ -155,13 +155,13 @@ obj *loadObj(const char *filename)
     }
 
     delete [] lineends;
-    printf("lines:%zu\n",linecount);
-    printf("numthreads:%i\n",numthreads);
-    printf("numverts:%zu\n",numverts);
+    //printf("lines:%zu\n",linecount);
+    //printf("numthreads:%i\n",numthreads);
+    //printf("numverts:%zu\n",numverts);
 
     clock_gettime(CLOCK_REALTIME, &stop );
     calltime=(stop.tv_sec-start.tv_sec)+(stop.tv_nsec-start.tv_nsec)/1000000000.0;
-    printf("done parsing file %lfseconds\n",calltime);
+//    printf("done parsing file %lfseconds\n",calltime);
 
     delete [] memoryfile;
 
