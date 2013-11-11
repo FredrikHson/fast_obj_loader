@@ -126,7 +126,7 @@ obj *loadObj(const char *filename)
             if(line[0]=='v' && line[1]==' ')
             {
                 vec3 vert;
-                int n=sscanf(line,"v %99f %99f %99f",&vert.x,&vert.y,&vert.z);
+                sscanf(line,"v %99f %99f %99f",&vert.x,&vert.y,&vert.z);
                 tmpverts[threadid][numtmpverts[threadid]]=vert;
                 numtmpverts[threadid]++;
                 numverts++;
