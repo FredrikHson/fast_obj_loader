@@ -2,10 +2,14 @@
 #include <stdlib.h>
 #include "fast_obj_loader.h"
 #include <time.h>
-#define timestoload 100
 int main(int argc, char *argv[])
 {
-    printf("starting to load file\n");
+    int timestoload=1;
+    if(argc==2)
+    {
+        sscanf(argv[1],"%20i",&timestoload);
+    }
+    printf("starting to load file %i times\n",timestoload);
     timespec start,stop;
     clock_gettime(CLOCK_REALTIME, &start );
     double calltime;
