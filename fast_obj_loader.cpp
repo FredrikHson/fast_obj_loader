@@ -17,6 +17,48 @@
 //    while
 //}
 
+int getNextFaceNumber(char *line,size_t &offset,unsigned char &type,bool &more)
+{
+#define buflen 256
+    char tmp[buflen+1];
+    more = 1;
+    unsigned int j=0;
+    for(unsigned int i=0;i<buflen;i++)
+    {
+        switch(line[i+offset])
+        {
+            case 0:
+                more = 0;
+                i=buflen;
+                break;
+
+            case '/':
+                offset+=i+1;
+                i=buflen;
+                break;
+            case ' ':
+                offset+=i+1;
+                i=buflen;
+                break;
+            default:
+                tmp[j]=line[i];
+                j++;
+                break;
+
+        }
+    }
+    if(j!=0)
+    {
+    tmp[j]=0;
+    printf("type:%i,%s\n",type,tmp);
+    if(!more)
+        printf("\n");
+    }
+    type++;
+    if(type==3)
+        type=0;
+}
+
 obj *loadObj(const char *filename)
 {
     obj *output=new obj;
@@ -118,7 +160,7 @@ obj *loadObj(const char *filename)
         {
             // read first line here
         }
-        #pragma omp for reduction(+:numverts)
+        #pragma omp single// for reduction(+:numverts)
         for (int i = 1; i < numEnds; i++)
         {
             char line[1024]={0};
@@ -130,6 +172,14 @@ obj *loadObj(const char *filename)
                 tmpverts[threadid][numtmpverts[threadid]]=vert;
                 numtmpverts[threadid]++;
                 numverts++;
+            }
+            if(line[0]=='f' && line[1]==' ')
+            {
+                size_t offset=0;
+                bool more=1;
+                unsigned char type=0;
+                while(more)
+                    getNextFaceNumber(line+2,offset,type,more);
             }
         }
         #pragma omp single

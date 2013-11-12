@@ -27,6 +27,8 @@ struct obj
 
     unsigned int numfaces;
 
+    face *faces;
+
     obj()
     {
         verts=0;
