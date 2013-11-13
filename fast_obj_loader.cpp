@@ -167,7 +167,7 @@ obj *loadObj(const char *filename)
         {
             // read first line here
         }
-        #pragma omp single// for reduction(+:numverts)
+        #pragma omp for reduction(+:numverts)
         for (int i = 1; i < numEnds; i++)
         {
             char line[1024]={0};
