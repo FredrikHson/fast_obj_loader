@@ -174,13 +174,21 @@ obj *loadObj(const char *filename)
             memcpy(&line,&memoryfile[lineends[i-1]+1],lineends[i]-lineends[i-1]-1);
             if(line[0]=='v' && line[1]==' ')
             {
+                char *l=line+2;
+                char *tmpl;
                 vec3 vert;
-                sscanf(line,"v %99f %99f %99f",&vert.x,&vert.y,&vert.z);
+
+                vert.x=strtod(l,&tmpl);
+                l=tmpl;
+                vert.y=strtod(l,&tmpl);
+                l=tmpl;
+                vert.z=strtod(l,&tmpl);
+                l=tmpl;
                 tmpverts[threadid][numtmpverts[threadid]]=vert;
                 numtmpverts[threadid]++;
                 numverts++;
             }
-            if(line[0]=='f' && line[1]==' ')
+            else if(line[0]=='f' && line[1]==' ')
             {
                 char *data=line+2;
                 size_t offset=0;
