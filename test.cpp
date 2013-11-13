@@ -15,6 +15,7 @@ int main(int argc, char *argv[])
     double calltime;
     for(int i=0;i<timestoload;i++)
     {
+        //obj *testmesh=loadObj("../test.obj");
         obj *testmesh=loadObj("../dragon_vrip_res2.obj");
         //obj *testmesh=loadObj("../xyzrgb_dragon.obj");
         delete testmesh;

@@ -17,10 +17,12 @@
 //    while
 //}
 
-int getNextFaceNumber(char *line,size_t &offset,unsigned char &type,bool &more)
+unsigned int getNextFaceNumber(char *line,size_t &offset,unsigned char &type,unsigned char &nexttype,bool &more,bool &valid)
 {
 #define buflen 256
+    unsigned int output=-1;
     char tmp[buflen+1];
+    type=nexttype;
     more = 1;
     unsigned int j=0;
     for(unsigned int i=0;i<buflen;i++)
@@ -30,18 +32,21 @@ int getNextFaceNumber(char *line,size_t &offset,unsigned char &type,bool &more)
             case 0:
                 more = 0;
                 i=buflen;
+                nexttype=0;
                 break;
 
             case '/':
                 offset+=i+1;
                 i=buflen;
+                nexttype++;
                 break;
             case ' ':
                 offset+=i+1;
                 i=buflen;
+                nexttype=0;
                 break;
             default:
-                tmp[j]=line[i];
+                tmp[j]=line[i+offset];
                 j++;
                 break;
 
@@ -49,14 +54,16 @@ int getNextFaceNumber(char *line,size_t &offset,unsigned char &type,bool &more)
     }
     if(j!=0)
     {
-    tmp[j]=0;
-    printf("type:%i,%s\n",type,tmp);
-    if(!more)
-        printf("\n");
+        tmp[j]=0;
+        valid=1;
+        output=atoi(tmp);
+        //sscanf(tmp,"%99u",&output);  0.6seconds vs atoi 0.36seconds from 0.2seconds without face loading
     }
-    type++;
-    if(type==3)
-        type=0;
+    else
+    {
+        valid=0;
+    }
+    return output;
 }
 
 obj *loadObj(const char *filename)
@@ -175,11 +182,32 @@ obj *loadObj(const char *filename)
             }
             if(line[0]=='f' && line[1]==' ')
             {
+                char *data=line+2;
                 size_t offset=0;
                 bool more=1;
                 unsigned char type=0;
+                unsigned char nexttype=0;
                 while(more)
-                    getNextFaceNumber(line+2,offset,type,more);
+                {
+                    bool valid;
+                    unsigned int faceidnum=getNextFaceNumber(data,offset,type,nexttype,more,valid);
+                    if(valid)
+                    {
+                    switch(type)
+                    {
+                        case 0:
+                  //          printf("p:%u ",faceidnum);
+                            break;
+                        case 1:
+                //            printf("u:%u ",faceidnum);
+                            break;
+                        case 2:
+              //              printf("n:%u ",faceidnum);
+                            break;
+                    }
+                    }
+                }
+            //    printf("\n");
             }
         }
         #pragma omp single
