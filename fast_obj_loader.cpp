@@ -116,7 +116,7 @@ obj *loadObj(const char *filename)
         for(size_t i=0;i<filelength;i++)
         {
             //printf("%i\n",i);
-            if(memoryfile[i]=='\n')
+            if(memoryfile[i]=='\n') // seems to work even with dos newlines \r\n
             {
                 tmpends[threadid][numEnds]=i;
                 numtmpends[threadid]++;
@@ -127,7 +127,7 @@ obj *loadObj(const char *filename)
         #pragma omp single
         {
             lineends=new size_t[numEnds+2];
-            lineends[0]=0;
+            lineends[0]=-1; // set to -1(max unsigned int) cause the read function later does a +1 to get around the \n
             lineends[numEnds+1]=filelength;
             numEnds+=2;
         }
