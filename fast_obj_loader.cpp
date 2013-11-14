@@ -92,6 +92,7 @@ obj *loadObj(const char *filename)
     int numthreads=0;
     int numEnds=0;
     size_t numverts=0;
+    size_t numfaces=0;
     size_t *lineends;
     FastDynamic<size_t> *tmpends;
     size_t *numtmpends;
@@ -125,13 +126,15 @@ obj *loadObj(const char *filename)
         }
         #pragma omp single
         {
-            lineends=new size_t[numEnds+1];
+            lineends=new size_t[numEnds+2];
+            lineends[0]=0;
             lineends[numEnds+1]=filelength;
+            numEnds+=2;
         }
         #pragma omp for
         for(int i=0;i<numthreads;i++)
         {
-            int offset=0;
+            int offset=1;
             for(int j=0;j<i;j++)
             {
                 offset+=numtmpends[j];
@@ -163,11 +166,7 @@ obj *loadObj(const char *filename)
             }
         }
 
-        #pragma omp single
-        {
-            // read first line here
-        }
-        #pragma omp for reduction(+:numverts)
+        #pragma omp for reduction(+:numverts,numfaces)
         for (int i = 1; i < numEnds; i++)
         {
             char line[1024]={0};
@@ -195,6 +194,7 @@ obj *loadObj(const char *filename)
                 bool more=1;
                 unsigned char type=0;
                 unsigned char nexttype=0;
+                numfaces++;
                 while(more)
                 {
                     bool valid;
@@ -241,9 +241,10 @@ obj *loadObj(const char *filename)
     }
 
     delete [] lineends;
-    //printf("lines:%zu\n",linecount);
-    //printf("numthreads:%i\n",numthreads);
-    //printf("numverts:%zu\n",numverts);
+    printf("lines:%zu\n",linecount);
+    printf("numthreads:%i\n",numthreads);
+    printf("numverts:%zu\n",numverts);
+    printf("numfaces:%zu\n",numfaces);
 
     clock_gettime(CLOCK_REALTIME, &stop );
     calltime=(stop.tv_sec-start.tv_sec)+(stop.tv_nsec-start.tv_nsec)/1000000000.0;
