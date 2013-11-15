@@ -88,11 +88,13 @@ obj *loadObj(const char *filename)
     double calltime;
 
 
-    size_t linecount=0;
-    int numthreads=0;
-    int numEnds=0;
-    size_t numverts=0;
-    size_t numfaces=0;
+    size_t linecount  = 0;
+    int numthreads    = 0;
+    int numEnds       = 0;
+    size_t numverts   = 0;
+    size_t numnormals = 0;
+    size_t numuvs     = 0;
+    size_t numfaces   = 0;
     size_t *lineends;
     FastDynamic<size_t> *tmpends;
     size_t *numtmpends;
@@ -148,7 +150,13 @@ obj *loadObj(const char *filename)
         }
     }
     FastDynamic<vec3> *tmpverts;
+    FastDynamic<vec3> *tmpnormals;
+    FastDynamic<vec2> *tmpuvs;
+    FastDynamic<face> *tmpfaces;
     size_t *numtmpverts;
+    size_t *numtmpnormals;
+    size_t *numtmpuvs;
+    size_t *numtmpfaces;
     #pragma omp parallel
     {
         // read verts for now
@@ -164,9 +172,33 @@ obj *loadObj(const char *filename)
                 tmpverts[i].SetContainer_size(8192);
                 numtmpverts[i]=0;
             }
+
+            tmpnormals=new FastDynamic<vec3>[numthreads];
+            numtmpnormals=new size_t[numthreads];
+            for(int i=0;i<numthreads;i++)
+            {
+                tmpnormals[i].SetContainer_size(8192);
+                numtmpnormals[i]=0;
+            }
+
+            tmpuvs=new FastDynamic<vec2>[numthreads];
+            numtmpuvs=new size_t[numthreads];
+            for(int i=0;i<numthreads;i++)
+            {
+                tmpuvs[i].SetContainer_size(8192);
+                numtmpuvs[i]=0;
+            }
+
+            tmpfaces=new FastDynamic<face>[numthreads];
+            numtmpfaces=new size_t[numthreads];
+            for(int i=0;i<numthreads;i++)
+            {
+                tmpfaces[i].SetContainer_size(8192);
+                numtmpfaces[i]=0;
+            }
         }
 
-        #pragma omp for reduction(+:numverts,numfaces)
+        #pragma omp for reduction(+:numverts,numfaces,numnormals,numuvs)
         for (int i = 1; i < numEnds; i++)
         {
             char line[1024]={0};
@@ -182,10 +214,37 @@ obj *loadObj(const char *filename)
                 vert.y=strtod(l,&tmpl);
                 l=tmpl;
                 vert.z=strtod(l,&tmpl);
-                l=tmpl;
                 tmpverts[threadid][numtmpverts[threadid]]=vert;
                 numtmpverts[threadid]++;
                 numverts++;
+            }
+            else if(line[0]=='v' && line[1]=='n' && line[2]==' ')
+            {
+                char *l=line+3;
+                char *tmpl;
+                vec3 normal;
+
+                normal.x=strtod(l,&tmpl);
+                l=tmpl;
+                normal.y=strtod(l,&tmpl);
+                l=tmpl;
+                normal.z=strtod(l,&tmpl);
+                tmpnormals[threadid][numtmpnormals[threadid]]=normal;
+                numtmpnormals[threadid]++;
+                numnormals++;
+            }
+            else if(line[0]=='v' && line[1]=='t' && line[2]==' ')
+            {
+                char *l=line+3;
+                char *tmpl;
+                vec2 uv;
+
+                uv.x=strtod(l,&tmpl);
+                l=tmpl;
+                uv.y=strtod(l,&tmpl);
+                tmpuvs[threadid][numtmpuvs[threadid]]=uv;
+                numtmpuvs[threadid]++;
+                numuvs++;
             }
             else if(line[0]=='f' && line[1]==' ')
             {
@@ -195,24 +254,29 @@ obj *loadObj(const char *filename)
                 unsigned char type=0;
                 unsigned char nexttype=0;
                 numfaces++;
+                face Face={0};
+                unsigned char v[3]={0};
                 while(more)
                 {
                     bool valid;
                     unsigned int faceidnum=getNextFaceNumber(data,offset,type,nexttype,more,valid);
                     if(valid)
                     {
-                    switch(type)
-                    {
-                        case 0:
-                  //          printf("p:%u ",faceidnum);
-                            break;
-                        case 1:
-                //            printf("u:%u ",faceidnum);
-                            break;
-                        case 2:
-              //              printf("n:%u ",faceidnum);
-                            break;
-                    }
+                        switch(type)
+                        {
+                            case 0:
+                                Face.verts[v[0]]=faceidnum;
+                                v[0]++;
+                                break;
+                            case 1:
+                                Face.uvs[v[1]]=faceidnum;
+                                v[1]++;
+                                break;
+                            case 2:
+                                Face.normals[v[2]]=faceidnum;
+                                v[2]++;
+                                break;
+                        }
                     }
                 }
             //    printf("\n");
@@ -244,6 +308,8 @@ obj *loadObj(const char *filename)
     printf("lines:%zu\n",linecount);
     printf("numthreads:%i\n",numthreads);
     printf("numverts:%zu\n",numverts);
+    printf("numuvs:%zu\n",numuvs);
+    printf("numnormals:%zu\n",numnormals);
     printf("numfaces:%zu\n",numfaces);
 
     clock_gettime(CLOCK_REALTIME, &stop );

@@ -22,23 +22,37 @@ struct face
 struct obj
 {
     unsigned int numverts;
-
-    vec3 *verts;
-
+    unsigned int numnormals;
+    unsigned int numuvs;
     unsigned int numfaces;
 
+    vec3 *verts;
+    vec3 *normals;
+    vec2 *uvs;
     face *faces;
 
     obj()
     {
-        verts=0;
-        numverts=0;
-        numfaces=0;
+        numverts   = 0;
+        numnormals = 0;
+        numuvs     = 0;
+        numfaces   = 0;
+
+        verts   = 0;
+        normals = 0;
+        uvs     = 0;
+        faces   = 0;
     }
     ~obj()
     {
         if(verts)
             delete [] verts;
+        if(normals)
+            delete [] normals;
+        if(uvs)
+            delete [] uvs;
+        if(faces)
+            delete [] faces;
     }
 };
 
