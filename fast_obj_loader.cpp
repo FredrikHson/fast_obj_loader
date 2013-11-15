@@ -265,14 +265,29 @@ obj *loadObj(const char *filename)
                         switch(type)
                         {
                             case 0:
+                                if(v[0]==4) // only support quads for now so so break out of loading more if it gets outside of that
+                                {
+                                    more=0;
+                                    break;
+                                }
                                 Face.verts[v[0]]=faceidnum;
                                 v[0]++;
                                 break;
                             case 1:
+                                if(v[1]==4)
+                                {
+                                    more=0;
+                                    break;
+                                }
                                 Face.uvs[v[1]]=faceidnum;
                                 v[1]++;
                                 break;
                             case 2:
+                                if(v[2]==4)
+                                {
+                                    more=0;
+                                    break;
+                                }
                                 Face.normals[v[2]]=faceidnum;
                                 v[2]++;
                                 break;
@@ -284,7 +299,14 @@ obj *loadObj(const char *filename)
         }
         #pragma omp single
         {
-            output->verts=new vec3[numverts];
+            if(numverts!=0)
+                output->verts=new vec3[numverts];
+            if(numnormals!=0)
+                output->normals=new vec3[numnormals];
+            if(numuvs!=0)
+                output->uvs=new vec2[numuvs];
+            if(numfaces!=0)
+                output->faces=new face[numfaces];
         }
         #pragma omp for
         for(int i=0;i<numthreads;i++)
@@ -302,15 +324,69 @@ obj *loadObj(const char *filename)
             delete [] tmpverts;
             delete [] numtmpverts;
         }
+
+
+#pragma omp for
+        for(int i=0;i<numthreads;i++)
+        {
+            int offset=0;
+            for(int j=0;j<i;j++)
+            {
+                offset+=numtmpnormals[j];
+            }
+            tmpnormals[i].CopyToStatic(&(output->normals[offset]),numtmpnormals[i]);
+        }
+
+        #pragma omp single
+        {
+            delete [] tmpnormals;
+            delete [] numtmpnormals;
+        }
+
+
+#pragma omp for
+        for(int i=0;i<numthreads;i++)
+        {
+            int offset=0;
+            for(int j=0;j<i;j++)
+            {
+                offset+=numtmpuvs[j];
+            }
+            tmpuvs[i].CopyToStatic(&(output->uvs[offset]),numtmpuvs[i]);
+        }
+
+        #pragma omp single
+        {
+            delete [] tmpuvs;
+            delete [] numtmpuvs;
+        }
+
+
+#pragma omp for
+        for(int i=0;i<numthreads;i++)
+        {
+            int offset=0;
+            for(int j=0;j<i;j++)
+            {
+                offset+=numtmpfaces[j];
+            }
+            tmpfaces[i].CopyToStatic(&(output->faces[offset]),numtmpfaces[i]);
+        }
+
+        #pragma omp single
+        {
+            delete [] tmpfaces;
+            delete [] numtmpfaces;
+        }
     }
 
     delete [] lineends;
-    printf("lines:%zu\n",linecount);
-    printf("numthreads:%i\n",numthreads);
-    printf("numverts:%zu\n",numverts);
-    printf("numuvs:%zu\n",numuvs);
-    printf("numnormals:%zu\n",numnormals);
-    printf("numfaces:%zu\n",numfaces);
+    //printf("lines:%zu\n",linecount);
+    //printf("numthreads:%i\n",numthreads);
+    //printf("numverts:%zu\n",numverts);
+    //printf("numuvs:%zu\n",numuvs);
+    //printf("numnormals:%zu\n",numnormals);
+    //printf("numfaces:%zu\n",numfaces);
 
     clock_gettime(CLOCK_REALTIME, &stop );
     calltime=(stop.tv_sec-start.tv_sec)+(stop.tv_nsec-start.tv_nsec)/1000000000.0;
