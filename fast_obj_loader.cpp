@@ -25,7 +25,7 @@ unsigned int getNextFaceNumber(char *line,size_t &offset,unsigned char &type,uns
     type=nexttype;
     more = 1;
     unsigned int j=0;
-    for(unsigned int i=0;i<buflen;i++)
+    for(unsigned int i=0; i<buflen; i++)
     {
         switch(line[i+offset])
         {
@@ -81,14 +81,16 @@ obj *loadObj(const char *filename)
     size_t filelength=ftell(f);
     fseek(f,0,SEEK_SET);
     size_t bufferLength=filelength;
-    if(bufferLength>MEMORYOVERHEAD) // read in chunks of
+    if(bufferLength>MEMORYOVERHEAD) // read in chunks of as long as MEMORYOVERHEAD is defined
+    {
         bufferLength=MEMORYOVERHEAD;
+    }
     //printf("filesize=%zu bytes\n",filelength);
     char *memoryfile=new char[bufferLength];
 
     fread(memoryfile,bufferLength,1,f);
     timespec start,stop;
-    clock_gettime(CLOCK_REALTIME, &start );
+    clock_gettime(CLOCK_REALTIME, &start);
     double calltime;
 
 
@@ -102,24 +104,24 @@ obj *loadObj(const char *filename)
     size_t *lineends;
     FastDynamic<size_t> *tmpends;
     size_t *numtmpends;
-#pragma omp parallel // first get line ends so they can be parsed in parallel
+    #pragma omp parallel // first get line ends so they can be parsed in parallel
     {
         numthreads=omp_get_num_threads();
         int threadid=omp_get_thread_num();
 
-#pragma omp single
+        #pragma omp single
         {
             tmpends=new FastDynamic<unsigned int>[numthreads];
             numtmpends=new size_t[numthreads];
-            for(int i=0;i<numthreads;i++)
+            for(int i=0; i<numthreads; i++)
             {
                 tmpends[i].SetContainer_size(8192);
                 numtmpends[i]=0;
             }
         }
 
-#pragma omp for reduction(+:linecount,numEnds)
-        for(size_t i=0;i<bufferLength;i++)
+        #pragma omp for reduction(+:linecount,numEnds)
+        for(size_t i=0; i<bufferLength; i++)
         {
             //printf("%i\n",i);
             if(memoryfile[i]=='\n') // seems to work even with dos newlines \r\n
@@ -130,24 +132,24 @@ obj *loadObj(const char *filename)
                 linecount++;
             }
         }
-#pragma omp single
+        #pragma omp single
         {
             lineends=new size_t[numEnds+2];
             lineends[0]=-1; // set to -1(max unsigned int) cause the read function later does a +1 to get around the \n
             lineends[numEnds+1]=bufferLength;
             numEnds+=2;
         }
-#pragma omp for
-        for(int i=0;i<numthreads;i++)
+        #pragma omp for
+        for(int i=0; i<numthreads; i++)
         {
             int offset=1;
-            for(int j=0;j<i;j++)
+            for(int j=0; j<i; j++)
             {
                 offset+=numtmpends[j];
             }
             tmpends[i].CopyToStatic(&lineends[offset],numtmpends[i]);
         }
-#pragma omp single
+        #pragma omp single
         {
             delete [] numtmpends;
             delete [] tmpends;
@@ -161,17 +163,17 @@ obj *loadObj(const char *filename)
     size_t *numtmpnormals;
     size_t *numtmpuvs;
     size_t *numtmpfaces;
-#pragma omp parallel
+    #pragma omp parallel
     {
         // read verts for now
         numthreads=omp_get_num_threads();
         int threadid=omp_get_thread_num();
 
-#pragma omp single
+        #pragma omp single
         {
             tmpverts=new FastDynamic<vec3>[numthreads];
             numtmpverts=new size_t[numthreads];
-            for(int i=0;i<numthreads;i++)
+            for(int i=0; i<numthreads; i++)
             {
                 tmpverts[i].SetContainer_size(8192);
                 numtmpverts[i]=0;
@@ -179,7 +181,7 @@ obj *loadObj(const char *filename)
 
             tmpnormals=new FastDynamic<vec3>[numthreads];
             numtmpnormals=new size_t[numthreads];
-            for(int i=0;i<numthreads;i++)
+            for(int i=0; i<numthreads; i++)
             {
                 tmpnormals[i].SetContainer_size(8192);
                 numtmpnormals[i]=0;
@@ -187,7 +189,7 @@ obj *loadObj(const char *filename)
 
             tmpuvs=new FastDynamic<vec2>[numthreads];
             numtmpuvs=new size_t[numthreads];
-            for(int i=0;i<numthreads;i++)
+            for(int i=0; i<numthreads; i++)
             {
                 tmpuvs[i].SetContainer_size(8192);
                 numtmpuvs[i]=0;
@@ -195,17 +197,17 @@ obj *loadObj(const char *filename)
 
             tmpfaces=new FastDynamic<face>[numthreads];
             numtmpfaces=new size_t[numthreads];
-            for(int i=0;i<numthreads;i++)
+            for(int i=0; i<numthreads; i++)
             {
                 tmpfaces[i].SetContainer_size(8192);
                 numtmpfaces[i]=0;
             }
         }
 
-#pragma omp for reduction(+:numverts,numfaces,numnormals,numuvs)
-        for (int i = 1; i < numEnds; i++)
+        #pragma omp for reduction(+:numverts,numfaces,numnormals,numuvs)
+        for(int i = 1; i < numEnds; i++)
         {
-            char line[1024]={0};
+            char line[1024]= {0};
             memcpy(&line,&memoryfile[lineends[i-1]+1],lineends[i]-lineends[i-1]-1);
             if(line[0]=='v' && line[1]==' ')
             {
@@ -258,8 +260,8 @@ obj *loadObj(const char *filename)
                 unsigned char type=0;
                 unsigned char nexttype=0;
                 numfaces++;
-                face Face={0};
-                unsigned char v[3]={0};
+                face Face= {0};
+                unsigned char v[3]= {0};
                 while(more)
                 {
                     bool valid;
@@ -301,83 +303,90 @@ obj *loadObj(const char *filename)
                 //    printf("\n");
             }
         }
-#pragma omp single
+        #pragma omp single
         {
             if(numverts!=0)
+            {
                 output->verts=new vec3[numverts];
+            }
             if(numnormals!=0)
+            {
                 output->normals=new vec3[numnormals];
+            }
             if(numuvs!=0)
+            {
                 output->uvs=new vec2[numuvs];
+            }
             if(numfaces!=0)
+            {
                 output->faces=new face[numfaces];
+            }
         }
-#pragma omp for
-        for(int i=0;i<numthreads;i++)
+        #pragma omp for
+        for(int i=0; i<numthreads; i++)
         {
             int offset=0;
-            for(int j=0;j<i;j++)
+            for(int j=0; j<i; j++)
             {
                 offset+=numtmpverts[j];
             }
             tmpverts[i].CopyToStatic(&(output->verts[offset]),numtmpverts[i]);
         }
 
-#pragma omp single
+        #pragma omp single
         {
             delete [] tmpverts;
             delete [] numtmpverts;
         }
 
 
-#pragma omp for
-        for(int i=0;i<numthreads;i++)
+        #pragma omp for
+        for(int i=0; i<numthreads; i++)
         {
             int offset=0;
-            for(int j=0;j<i;j++)
+            for(int j=0; j<i; j++)
             {
                 offset+=numtmpnormals[j];
             }
             tmpnormals[i].CopyToStatic(&(output->normals[offset]),numtmpnormals[i]);
         }
 
-#pragma omp single
+        #pragma omp single
         {
             delete [] tmpnormals;
             delete [] numtmpnormals;
         }
 
 
-#pragma omp for
-        for(int i=0;i<numthreads;i++)
+        #pragma omp for
+        for(int i=0; i<numthreads; i++)
         {
             int offset=0;
-            for(int j=0;j<i;j++)
+            for(int j=0; j<i; j++)
             {
                 offset+=numtmpuvs[j];
             }
             tmpuvs[i].CopyToStatic(&(output->uvs[offset]),numtmpuvs[i]);
         }
 
-#pragma omp single
+        #pragma omp single
         {
             delete [] tmpuvs;
             delete [] numtmpuvs;
         }
 
 
-#pragma omp for
-        for(int i=0;i<numthreads;i++)
+        #pragma omp for
+        for(int i=0; i<numthreads; i++)
         {
             int offset=0;
-            for(int j=0;j<i;j++)
+            for(int j=0; j<i; j++)
             {
                 offset+=numtmpfaces[j];
             }
             tmpfaces[i].CopyToStatic(&(output->faces[offset]),numtmpfaces[i]);
         }
-
-#pragma omp single
+        #pragma omp single
         {
             delete [] tmpfaces;
             delete [] numtmpfaces;
@@ -392,7 +401,7 @@ obj *loadObj(const char *filename)
     //printf("numnormals:%zu\n",numnormals);
     //printf("numfaces:%zu\n",numfaces);
 
-    clock_gettime(CLOCK_REALTIME, &stop );
+    clock_gettime(CLOCK_REALTIME, &stop);
     calltime=(stop.tv_sec-start.tv_sec)+(stop.tv_nsec-start.tv_nsec)/1000000000.0;
     //    printf("done parsing file %lfseconds\n",calltime);
 
