@@ -65,7 +65,8 @@ unsigned int getNextFaceNumber(char *line,size_t &offset,unsigned char &type,uns
     }
     return output;
 }
-
+// how much it should read at once to reduce the memory usage
+#define MEMORYOVERHEAD 1048576
 obj *loadObj(const char *filename)
 {
     obj *output=new obj;
@@ -79,10 +80,13 @@ obj *loadObj(const char *filename)
     fseek(f,0,SEEK_END);
     size_t filelength=ftell(f);
     fseek(f,0,SEEK_SET);
+    size_t bufferLength=filelength;
+    if(bufferLength>MEMORYOVERHEAD) // read in chunks of
+        bufferLength=MEMORYOVERHEAD;
     //printf("filesize=%zu bytes\n",filelength);
-    char *memoryfile=new char[filelength];
+    char *memoryfile=new char[bufferLength];
 
-    fread(memoryfile,filelength,1,f);
+    fread(memoryfile,bufferLength,1,f);
     timespec start,stop;
     clock_gettime(CLOCK_REALTIME, &start );
     double calltime;
@@ -98,12 +102,12 @@ obj *loadObj(const char *filename)
     size_t *lineends;
     FastDynamic<size_t> *tmpends;
     size_t *numtmpends;
-    #pragma omp parallel // first get line ends so they can be parsed in parallel
+#pragma omp parallel // first get line ends so they can be parsed in parallel
     {
         numthreads=omp_get_num_threads();
         int threadid=omp_get_thread_num();
 
-        #pragma omp single
+#pragma omp single
         {
             tmpends=new FastDynamic<unsigned int>[numthreads];
             numtmpends=new size_t[numthreads];
@@ -114,8 +118,8 @@ obj *loadObj(const char *filename)
             }
         }
 
-        #pragma omp for reduction(+:linecount,numEnds)
-        for(size_t i=0;i<filelength;i++)
+#pragma omp for reduction(+:linecount,numEnds)
+        for(size_t i=0;i<bufferLength;i++)
         {
             //printf("%i\n",i);
             if(memoryfile[i]=='\n') // seems to work even with dos newlines \r\n
@@ -126,14 +130,14 @@ obj *loadObj(const char *filename)
                 linecount++;
             }
         }
-        #pragma omp single
+#pragma omp single
         {
             lineends=new size_t[numEnds+2];
             lineends[0]=-1; // set to -1(max unsigned int) cause the read function later does a +1 to get around the \n
-            lineends[numEnds+1]=filelength;
+            lineends[numEnds+1]=bufferLength;
             numEnds+=2;
         }
-        #pragma omp for
+#pragma omp for
         for(int i=0;i<numthreads;i++)
         {
             int offset=1;
@@ -143,7 +147,7 @@ obj *loadObj(const char *filename)
             }
             tmpends[i].CopyToStatic(&lineends[offset],numtmpends[i]);
         }
-        #pragma omp single
+#pragma omp single
         {
             delete [] numtmpends;
             delete [] tmpends;
@@ -157,13 +161,13 @@ obj *loadObj(const char *filename)
     size_t *numtmpnormals;
     size_t *numtmpuvs;
     size_t *numtmpfaces;
-    #pragma omp parallel
+#pragma omp parallel
     {
         // read verts for now
         numthreads=omp_get_num_threads();
         int threadid=omp_get_thread_num();
 
-        #pragma omp single
+#pragma omp single
         {
             tmpverts=new FastDynamic<vec3>[numthreads];
             numtmpverts=new size_t[numthreads];
@@ -198,7 +202,7 @@ obj *loadObj(const char *filename)
             }
         }
 
-        #pragma omp for reduction(+:numverts,numfaces,numnormals,numuvs)
+#pragma omp for reduction(+:numverts,numfaces,numnormals,numuvs)
         for (int i = 1; i < numEnds; i++)
         {
             char line[1024]={0};
@@ -294,10 +298,10 @@ obj *loadObj(const char *filename)
                         }
                     }
                 }
-            //    printf("\n");
+                //    printf("\n");
             }
         }
-        #pragma omp single
+#pragma omp single
         {
             if(numverts!=0)
                 output->verts=new vec3[numverts];
@@ -308,7 +312,7 @@ obj *loadObj(const char *filename)
             if(numfaces!=0)
                 output->faces=new face[numfaces];
         }
-        #pragma omp for
+#pragma omp for
         for(int i=0;i<numthreads;i++)
         {
             int offset=0;
@@ -319,7 +323,7 @@ obj *loadObj(const char *filename)
             tmpverts[i].CopyToStatic(&(output->verts[offset]),numtmpverts[i]);
         }
 
-        #pragma omp single
+#pragma omp single
         {
             delete [] tmpverts;
             delete [] numtmpverts;
@@ -337,7 +341,7 @@ obj *loadObj(const char *filename)
             tmpnormals[i].CopyToStatic(&(output->normals[offset]),numtmpnormals[i]);
         }
 
-        #pragma omp single
+#pragma omp single
         {
             delete [] tmpnormals;
             delete [] numtmpnormals;
@@ -355,7 +359,7 @@ obj *loadObj(const char *filename)
             tmpuvs[i].CopyToStatic(&(output->uvs[offset]),numtmpuvs[i]);
         }
 
-        #pragma omp single
+#pragma omp single
         {
             delete [] tmpuvs;
             delete [] numtmpuvs;
@@ -373,7 +377,7 @@ obj *loadObj(const char *filename)
             tmpfaces[i].CopyToStatic(&(output->faces[offset]),numtmpfaces[i]);
         }
 
-        #pragma omp single
+#pragma omp single
         {
             delete [] tmpfaces;
             delete [] numtmpfaces;
@@ -390,7 +394,7 @@ obj *loadObj(const char *filename)
 
     clock_gettime(CLOCK_REALTIME, &stop );
     calltime=(stop.tv_sec-start.tv_sec)+(stop.tv_nsec-start.tv_nsec)/1000000000.0;
-//    printf("done parsing file %lfseconds\n",calltime);
+    //    printf("done parsing file %lfseconds\n",calltime);
 
     delete [] memoryfile;
 
