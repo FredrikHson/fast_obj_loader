@@ -40,9 +40,9 @@ public:
     }
     void SetContainer_size(size_t newsize) // will delete all contents use constructor instead if possible
     {
-        for(size_t i=0;i<bucket_count;i++)
+        for(size_t i=0; i<bucket_count; i++)
         {
-            delete [] (*buckets[i]).contents;
+            delete [](*buckets[i]).contents;
             delete buckets[i];
         }
         delete [] buckets;
@@ -55,9 +55,9 @@ public:
     }
     ~FastDynamic()
     {
-        for(size_t i=0;i<bucket_count;i++)
+        for(size_t i=0; i<bucket_count; i++)
         {
-            delete [] (*buckets[i]).contents;
+            delete [](*buckets[i]).contents;
             delete buckets[i];
         }
         delete [] buckets;
@@ -74,12 +74,10 @@ public:
         {
             bucket **tmparray=buckets;
             buckets=new bucket*[bucket_index+1];
-            for(size_t i=0;i<bucket_count;i++)
-            {
+            for(size_t i=0; i<bucket_count; i++)
                 buckets[i]=tmparray[i];
-            }
             delete [] tmparray;
-            for(size_t i=bucket_count;i<bucket_index+1;i++)
+            for(size_t i=bucket_count; i<bucket_index+1; i++)
             {
                 buckets[i]=new bucket;
                 (*buckets[i]).contents=new T[bucket_size];
@@ -100,7 +98,7 @@ public:
         size_t leftover=count%bucket_size;
         T *buf=staticarray;
         size_t Bsize=bucket_size*sizeof(T);
-        for(size_t i=0;i<numBuckets;i++)
+        for(size_t i=0; i<numBuckets; i++)
         {
             memcpy(buf,(*buckets[i]).contents,Bsize);
             buf+=bucket_size;

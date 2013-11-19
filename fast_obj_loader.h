@@ -3,12 +3,12 @@
 
 struct vec2
 {
-    float x,y;
+    float x, y;
 };
 
 struct vec3
 {
-    float x,y,z;
+    float x, y, z;
 };
 
 struct face
