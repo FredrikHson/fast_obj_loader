@@ -1,5 +1,7 @@
 #include "fast_obj_loader.h"
 #include <time.h>
+#include <stdio.h>
+
 int main(int argc, char *argv[])
 {
     int timestoload = 1;
