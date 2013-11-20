@@ -317,16 +317,48 @@ obj *loadObj(const char *filename)
         #pragma omp single
         {
             if(numverts != 0)
-                output->verts = new vec3[numverts];
+            {
+                if(output->verts)
+                {
+                    vec3 *tmpptr = (vec3 *)realloc(output->verts, sizeof(vec3) * numverts);
+                    output->verts = tmpptr;
+                }
+                else
+                    output->verts = (vec3 *)malloc(sizeof(vec3) * numverts);
+            }
 
             if(numnormals != 0)
-                output->normals = new vec3[numnormals];
+            {
+                if(output->normals)
+                {
+                    vec3 *tmpptr = (vec3 *)realloc(output->normals, sizeof(vec3) * numnormals);
+                    output->normals = tmpptr;
+                }
+                else
+                    output->normals = (vec3 *)malloc(sizeof(vec3) * numnormals);
+            }
 
             if(numuvs != 0)
-                output->uvs = new vec2[numuvs];
+            {
+                if(output->uvs)
+                {
+                    vec2 *tmpptr = (vec2 *)realloc(output->uvs, sizeof(vec2) * numuvs);
+                    output->uvs = tmpptr;
+                }
+                else
+                    output->uvs = (vec2 *)malloc(sizeof(vec2) * numuvs);
+            }
 
             if(numfaces != 0)
-                output->faces = new face[numfaces];
+            {
+                if(output->faces)
+                {
+                    face *tmpptr = (face *)realloc(output->faces, sizeof(face) * numfaces);
+                    output->faces = tmpptr;
+                }
+                else
+                    output->faces = (face *)malloc(sizeof(face) * numfaces);
+            }
         }
         #pragma omp for
 

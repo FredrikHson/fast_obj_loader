@@ -1,6 +1,8 @@
 #ifndef __FAST_OBJ_LOADER__
 #define __FAST_OBJ_LOADER__
 
+#include <stdlib.h>
+
 struct vec2
 {
     float x, y;
@@ -46,16 +48,16 @@ struct obj
     ~obj()
     {
         if(verts)
-            delete [] verts;
+            free(verts);
 
         if(normals)
-            delete [] normals;
+            free(normals);
 
         if(uvs)
-            delete [] uvs;
+            free(uvs);
 
         if(faces)
-            delete [] faces;
+            free(faces);
     }
 };
 
