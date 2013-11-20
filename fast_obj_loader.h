@@ -47,10 +47,13 @@ struct obj
     {
         if(verts)
             delete [] verts;
+
         if(normals)
             delete [] normals;
+
         if(uvs)
             delete [] uvs;
+
         if(faces)
             delete [] faces;
     }
