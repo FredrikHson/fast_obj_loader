@@ -4,6 +4,9 @@
 #include "fastdynamic.h"
 #ifdef _OPENMP
 #include <omp.h>
+#else
+#define omp_get_thread_num() 0
+#define omp_get_num_threads() 1
 #endif
 #include <time.h>
 #include <string.h>
@@ -77,6 +80,7 @@ obj *loadObj(const char *filename)
         return 0;
     }
 
+
     fseek(f, 0, SEEK_END);
     size_t filelength = ftell(f);
     fseek(f, 0, SEEK_SET);
@@ -92,6 +96,7 @@ obj *loadObj(const char *filename)
     double calltime;
     size_t fileoffset = 0;
 
+
     while(fileoffset < filelength)
     {
         size_t numverts   = 0;
@@ -104,10 +109,10 @@ obj *loadObj(const char *filename)
         size_t linecount = 0;
         int numthreads   = 0;
         int numEnds      = 0;
-        size_t vertsoffset   = 0;
-        size_t normalsoffset = 0;
-        size_t uvsoffset     = 0;
-        size_t facesoffset   = 0;
+        size_t vertsoffset   = output->numverts;
+        size_t normalsoffset = output->numnormals;
+        size_t uvsoffset     = output->numuvs;
+        size_t facesoffset   = output->numfaces;
         size_t *lineends;
         FastDynamic<size_t> *tmpends;
         size_t *numtmpends;
@@ -148,7 +153,7 @@ obj *loadObj(const char *filename)
 
             for(int i = 0; i < numthreads; i++)
             {
-                int offset = 1;
+                size_t offset = 1;
 
                 for(int j = 0; j < i; j++)
                     offset += numtmpends[j];
@@ -329,7 +334,7 @@ obj *loadObj(const char *filename)
                 {
                     if(output->verts)
                     {
-                        vec3 *tmpptr = (vec3 *)realloc(output->verts, sizeof(vec3) * numverts);
+                        vec3 *tmpptr = (vec3 *)realloc(output->verts, sizeof(vec3) * (output->numverts + numverts));
                         output->verts = tmpptr;
                     }
                     else
@@ -340,7 +345,7 @@ obj *loadObj(const char *filename)
                 {
                     if(output->normals)
                     {
-                        vec3 *tmpptr = (vec3 *)realloc(output->normals, sizeof(vec3) * numnormals);
+                        vec3 *tmpptr = (vec3 *)realloc(output->normals, sizeof(vec3) * (output->numnormals + numnormals));
                         output->normals = tmpptr;
                     }
                     else
@@ -351,7 +356,7 @@ obj *loadObj(const char *filename)
                 {
                     if(output->uvs)
                     {
-                        vec2 *tmpptr = (vec2 *)realloc(output->uvs, sizeof(vec2) * numuvs);
+                        vec2 *tmpptr = (vec2 *)realloc(output->uvs, sizeof(vec2) * (output->numuvs + numuvs));
                         output->uvs = tmpptr;
                     }
                     else
@@ -362,7 +367,7 @@ obj *loadObj(const char *filename)
                 {
                     if(output->faces)
                     {
-                        face *tmpptr = (face *)realloc(output->faces, sizeof(face) * numfaces);
+                        face *tmpptr = (face *)realloc(output->faces, sizeof(face) * (output->numfaces + numfaces));
                         output->faces = tmpptr;
                     }
                     else
@@ -373,7 +378,7 @@ obj *loadObj(const char *filename)
 
             for(int i = 0; i < numthreads; i++)
             {
-                int offset = vertsoffset;
+                size_t offset = vertsoffset;
 
                 for(int j = 0; j < i; j++)
                     offset += numtmpverts[j];
@@ -390,7 +395,7 @@ obj *loadObj(const char *filename)
 
             for(int i = 0; i < numthreads; i++)
             {
-                int offset = normalsoffset;
+                size_t offset = normalsoffset;
 
                 for(int j = 0; j < i; j++)
                     offset += numtmpnormals[j];
@@ -407,7 +412,7 @@ obj *loadObj(const char *filename)
 
             for(int i = 0; i < numthreads; i++)
             {
-                int offset = uvsoffset;
+                size_t offset = uvsoffset;
 
                 for(int j = 0; j < i; j++)
                     offset += numtmpuvs[j];
@@ -420,44 +425,46 @@ obj *loadObj(const char *filename)
                 delete [] tmpuvs;
                 delete [] numtmpuvs;
             }
-            #pragma omp single
+            #pragma omp for
 
             for(int i = 0; i < numthreads; i++)
             {
-                int offset = facesoffset;
+                size_t offset = facesoffset;
 
                 for(int j = 0; j < i; j++)
                     offset += numtmpfaces[j];
-
-                printf("faceoffset:%i\n", offset);
 
                 tmpfaces[i].CopyToStatic(&(output->faces[offset]), numtmpfaces[i]);
             }
 
             #pragma omp single
             {
-                vertsoffset   = numverts;
-                normalsoffset = numnormals;
-                uvsoffset     = numuvs;
-                facesoffset   = numfaces;
-                printf("faceoffset:%i\n", facesoffset);
+
                 delete [] tmpfaces;
                 delete [] numtmpfaces;
+            }
+            #pragma omp single
+            {
+                output->numverts += numverts;
+                output->numuvs += numuvs;
+                output->numnormals += numnormals;
+                output->numfaces += numfaces;
+                printf("numfaces:%zu\t", output->numfaces);
+                printf("facesoffset:%zu\n", facesoffset);
+                printf("uvsoffset:%zu\n", uvsoffset);
+                printf("vertsoffset:%zu\n", vertsoffset);
+                printf("normalsoffset:%zu\n", normalsoffset);
             }
         }
         delete [] lineends;
     }
 
-    output->numverts = numverts;
-    output->numuvs = numuvs;
-    output->numnormals = numnormals;
-    output->numfaces = numfaces;
     //printf("lines:%zu\n",linecount);
     //printf("numthreads:%i\n",numthreads);
     //printf("numverts:%zu\n", numverts);
     //printf("numuvs:%zu\n", numuvs);
     //printf("numnormals:%zu\n", numnormals);
-    printf("numfaces:%zu\n", numfaces);
+    printf("numfaces:%zu\n", output->numfaces);
     clock_gettime(CLOCK_REALTIME, &stop);
     calltime = (stop.tv_sec - start.tv_sec) + (stop.tv_nsec - start.tv_nsec) / 1000000000.0;
     //    printf("done parsing file %lfseconds\n",calltime);
@@ -474,7 +481,7 @@ void writeObj(const char *filename, obj &input)
     if(!f)
         return;
 
-    printf("writing obj verts:%i\n", input.numverts);
+    printf("writing obj verts:%zu\n", input.numverts);
 
     //for(int i = 0; i < input.numverts; i++)
     //fprintf(f, "v %f %f %f\n", input.verts[i].x, input.verts[i].y, input.verts[i].z);
@@ -563,3 +570,4 @@ void writeObj(const char *filename, obj &input)
 
     fclose(f);
 }
+
