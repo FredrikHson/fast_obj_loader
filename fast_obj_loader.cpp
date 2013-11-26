@@ -91,13 +91,13 @@ obj *loadObj(const char *filename)
     clock_gettime(CLOCK_REALTIME, &start);
     double calltime;
     size_t fileoffset = 0;
-    size_t numverts   = 0;
-    size_t numnormals = 0;
-    size_t numuvs     = 0;
-    size_t numfaces   = 0;
 
     while(fileoffset < filelength)
     {
+        size_t numverts   = 0;
+        size_t numnormals = 0;
+        size_t numuvs     = 0;
+        size_t numfaces   = 0;
         fseek(f, fileoffset, SEEK_SET);
         fread(memoryfile, bufferLength, 1, f);
 
@@ -130,7 +130,6 @@ obj *loadObj(const char *filename)
 
             for(size_t i = 0; i < bufferLength; i++)
             {
-                //printf("%i\n",i);
                 if(memoryfile[i] == '\n' || (i + fileoffset) >= filelength) // seems to work even with dos newlines \r\n
                 {
                     tmpends[threadid][numEnds] = i;
@@ -273,7 +272,8 @@ obj *loadObj(const char *filename)
                     unsigned char type = 0;
                     unsigned char nexttype = 0;
                     numfaces++;
-                    face Face = {0};
+                    face &Face = tmpfaces[threadid][numtmpfaces[threadid]];
+                    numtmpfaces[threadid]++;
                     unsigned char v[3] = {0};
 
                     while(more)
@@ -420,7 +420,7 @@ obj *loadObj(const char *filename)
                 delete [] tmpuvs;
                 delete [] numtmpuvs;
             }
-            #pragma omp for
+            #pragma omp single
 
             for(int i = 0; i < numthreads; i++)
             {
@@ -428,6 +428,8 @@ obj *loadObj(const char *filename)
 
                 for(int j = 0; j < i; j++)
                     offset += numtmpfaces[j];
+
+                printf("faceoffset:%i\n", offset);
 
                 tmpfaces[i].CopyToStatic(&(output->faces[offset]), numtmpfaces[i]);
             }
@@ -438,6 +440,7 @@ obj *loadObj(const char *filename)
                 normalsoffset = numnormals;
                 uvsoffset     = numuvs;
                 facesoffset   = numfaces;
+                printf("faceoffset:%i\n", facesoffset);
                 delete [] tmpfaces;
                 delete [] numtmpfaces;
             }
@@ -445,16 +448,118 @@ obj *loadObj(const char *filename)
         delete [] lineends;
     }
 
+    output->numverts = numverts;
+    output->numuvs = numuvs;
+    output->numnormals = numnormals;
+    output->numfaces = numfaces;
     //printf("lines:%zu\n",linecount);
     //printf("numthreads:%i\n",numthreads);
     //printf("numverts:%zu\n", numverts);
     //printf("numuvs:%zu\n", numuvs);
     //printf("numnormals:%zu\n", numnormals);
-    //printf("numfaces:%zu\n", numfaces);
+    printf("numfaces:%zu\n", numfaces);
     clock_gettime(CLOCK_REALTIME, &stop);
     calltime = (stop.tv_sec - start.tv_sec) + (stop.tv_nsec - start.tv_nsec) / 1000000000.0;
     //    printf("done parsing file %lfseconds\n",calltime);
     delete [] memoryfile;
     fclose(f);
     return output;
+}
+
+
+void writeObj(const char *filename, obj &input)
+{
+    FILE *f = fopen(filename, "wb");
+
+    if(!f)
+        return;
+
+    printf("writing obj verts:%i\n", input.numverts);
+
+    //for(int i = 0; i < input.numverts; i++)
+    //fprintf(f, "v %f %f %f\n", input.verts[i].x, input.verts[i].y, input.verts[i].z);
+
+    //for(int i = 0; i < input.numnormals; i++)
+    //fprintf(f, "vn %f %f %f\n", input.normals[i].x, input.normals[i].y, input.normals[i].z);
+
+    //for(int i = 0; i < input.numuvs; i++)
+    //fprintf(f, "vt %f %f\n", input.uvs[i].x, input.uvs[i].y);
+
+    for(int i = 0; i < input.numfaces; i++)
+    {
+        if(input.numnormals == 0 && input.numuvs == 0)
+        {
+            fprintf(f, "f %i %i %i",
+                    input.faces[i].verts[0],
+                    input.faces[i].verts[1],
+                    input.faces[i].verts[2]
+                   );
+
+            if(input.faces[i].quad)
+            {
+                fprintf(f, " %i",
+                        input.faces[i].verts[3]
+                       );
+            }
+        }
+        else if(input.numnormals == 0 && input.numuvs != 0)
+        {
+            fprintf(f, "f %i/%i %i/%i %i/%i",
+                    input.faces[i].verts[0],
+                    input.faces[i].uvs[0],
+                    input.faces[i].verts[1],
+                    input.faces[i].uvs[1],
+                    input.faces[i].verts[2],
+                    input.faces[i].uvs[2]
+                   );
+
+            if(input.faces[i].quad)
+            {
+                fprintf(f, " %i/%i",
+                        input.faces[i].verts[3],
+                        input.faces[i].uvs[3]
+                       );
+            }
+        }
+        else if(input.numnormals != 0 && input.numuvs == 0)
+        {
+            fprintf(f, "f %i//%i %i//%i %i//%i",
+                    input.faces[i].verts[0],
+                    input.faces[i].normals[0],
+                    input.faces[i].verts[1],
+                    input.faces[i].normals[1],
+                    input.faces[i].verts[2],
+                    input.faces[i].normals[2]
+                   );
+
+            if(input.faces[i].quad)
+            {
+                fprintf(f, " %i//%i",
+                        input.faces[i].verts[3],
+                        input.faces[i].normals[3]
+                       );
+            }
+        }
+        else if(input.numnormals != 0 && input.numuvs != 0)
+        {
+            fprintf(f, "f %i/%i/%i %i/%i/%i %i/%i/%i",
+                    input.faces[i].verts[0],
+                    input.faces[i].uvs[0],
+                    input.faces[i].normals[0],
+                    input.faces[i].verts[1],
+                    input.faces[i].uvs[1],
+                    input.faces[i].normals[1],
+                    input.faces[i].verts[2],
+                    input.faces[i].uvs[2],
+                    input.faces[i].normals[2]
+                   );
+
+            if(input.faces[i].quad)
+                fprintf(f, " %i/%i/%i", input.faces[i].verts[3], input.faces[i].uvs[3], input.faces[i].normals[3]);
+        }
+
+        fprintf(f, "\n");
+    }
+
+    fclose(f);
 }

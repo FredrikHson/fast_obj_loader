@@ -19,6 +19,7 @@ int main(int argc, char *argv[])
         //obj *testmesh=loadObj("../test.obj");
         obj *testmesh = loadObj("../dragon_vrip_res2.obj");
         //obj *testmesh=loadObj("../xyzrgb_dragon.obj");
+        writeObj("verification.obj",*testmesh);
         delete testmesh;
     }
 

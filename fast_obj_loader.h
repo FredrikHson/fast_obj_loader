@@ -62,5 +62,5 @@ struct obj
 };
 
 obj *loadObj(const char *filename);
-
+void writeObj(const char *filename, obj &input);
 #endif
