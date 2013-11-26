@@ -10,13 +10,7 @@
 #endif
 #include <time.h>
 #include <string.h>
-//bool getcstr(char *out,unsigned short bufflen,char *input,size_t &len) // bufflen = output buffer size // input has to be a copy of the original pointer
-//{
-//    if(len<=0)
-//        return false;
-//    unsigned short i=0;
-//    while
-//}
+
 unsigned int getNextFaceNumber(char *line, size_t &offset, unsigned char &type, unsigned char &nexttype, bool &more, bool &valid)
 {
 #define buflen 256
@@ -163,7 +157,7 @@ obj *loadObj(const char *filename)
 
             #pragma omp single
             {
-                fileoffset += lineends[numEnds];
+                fileoffset += lineends[numEnds - 1];
                 delete [] numtmpends;
                 delete [] tmpends;
             }
@@ -278,6 +272,7 @@ obj *loadObj(const char *filename)
                     unsigned char nexttype = 0;
                     numfaces++;
                     face &Face = tmpfaces[threadid][numtmpfaces[threadid]];
+                    Face.quad = 0;
                     numtmpfaces[threadid]++;
                     unsigned char v[3] = {0};
 
@@ -293,6 +288,7 @@ obj *loadObj(const char *filename)
                                 case 0:
                                     if(v[0] == 4) // only support quads for now so so break out of loading more if it gets outside of that
                                     {
+                                        printf("uum quad\n");
                                         more = 0;
                                         break;
                                     }
@@ -304,6 +300,7 @@ obj *loadObj(const char *filename)
                                 case 1:
                                     if(v[1] == 4)
                                     {
+                                        printf("uum quad\n");
                                         more = 0;
                                         break;
                                     }
@@ -315,6 +312,7 @@ obj *loadObj(const char *filename)
                                 case 2:
                                     if(v[2] == 4)
                                     {
+                                        printf("uum quad\n");
                                         more = 0;
                                         break;
                                     }
@@ -325,6 +323,9 @@ obj *loadObj(const char *filename)
                             }
                         }
                     }
+
+                    if(v[0] == 4)
+                        Face.quad = 1;
                 }
             }
 
@@ -449,22 +450,21 @@ obj *loadObj(const char *filename)
                 output->numuvs += numuvs;
                 output->numnormals += numnormals;
                 output->numfaces += numfaces;
-                printf("numfaces:%zu\t", output->numfaces);
-                printf("facesoffset:%zu\n", facesoffset);
-                printf("uvsoffset:%zu\n", uvsoffset);
-                printf("vertsoffset:%zu\n", vertsoffset);
-                printf("normalsoffset:%zu\n", normalsoffset);
+                //printf("numfaces:%zu\t", output->numfaces);
+                //printf("facesoffset:%zu\n", facesoffset);
+                //printf("uvsoffset:%zu\n", uvsoffset);
+                //printf("vertsoffset:%zu\n", vertsoffset);
+                //printf("normalsoffset:%zu\n", normalsoffset);
             }
         }
         delete [] lineends;
     }
 
     //printf("lines:%zu\n",linecount);
-    //printf("numthreads:%i\n",numthreads);
-    //printf("numverts:%zu\n", numverts);
-    //printf("numuvs:%zu\n", numuvs);
-    //printf("numnormals:%zu\n", numnormals);
-    printf("numfaces:%zu\n", output->numfaces);
+    //printf("numverts:%zu\n", output->numverts);
+    //printf("numuvs:%zu\n", output->numuvs);
+    //printf("numnormals:%zu\n", output->numnormals);
+    //printf("numfaces:%zu\n", output->numfaces);
     clock_gettime(CLOCK_REALTIME, &stop);
     calltime = (stop.tv_sec - start.tv_sec) + (stop.tv_nsec - start.tv_nsec) / 1000000000.0;
     //    printf("done parsing file %lfseconds\n",calltime);
@@ -483,14 +483,14 @@ void writeObj(const char *filename, obj &input)
 
     printf("writing obj verts:%zu\n", input.numverts);
 
-    //for(int i = 0; i < input.numverts; i++)
-    //fprintf(f, "v %f %f %f\n", input.verts[i].x, input.verts[i].y, input.verts[i].z);
+    for(int i = 0; i < input.numverts; i++)
+        fprintf(f, "v %f %f %f\n", input.verts[i].x, input.verts[i].y, input.verts[i].z);
 
-    //for(int i = 0; i < input.numnormals; i++)
-    //fprintf(f, "vn %f %f %f\n", input.normals[i].x, input.normals[i].y, input.normals[i].z);
+    for(int i = 0; i < input.numnormals; i++)
+        fprintf(f, "vn %f %f %f\n", input.normals[i].x, input.normals[i].y, input.normals[i].z);
 
-    //for(int i = 0; i < input.numuvs; i++)
-    //fprintf(f, "vt %f %f\n", input.uvs[i].x, input.uvs[i].y);
+    for(int i = 0; i < input.numuvs; i++)
+        fprintf(f, "vt %f %f\n", input.uvs[i].x, input.uvs[i].y);
 
     for(int i = 0; i < input.numfaces; i++)
     {
@@ -570,4 +570,3 @@ void writeObj(const char *filename, obj &input)
 
     fclose(f);
 }
-
