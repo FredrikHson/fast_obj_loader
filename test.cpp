@@ -30,24 +30,5 @@ int main(int argc, char *argv[])
     calltime = (stop.tv_sec - start.tv_sec) + (stop.tv_nsec - start.tv_nsec) / 1000000000.0;
     printf("done loading file %lfseconds\n", calltime / timestoload);
 
-    //FastDynamic<int> test;
-    //test.SetContainer_size(1024);
-
-    //for(int i = 0; i < 3200000; i++)
-        //test[i] = i;
-
-    //for(int i = 0; i < 3200000; i++)
-        //if(test[i] != i)
-            //printf("wtf");
-
-    //printf("endtest\n");
-
-    //int *staticarray = new int[3200000];
-    //printf("end static test\n");
-    //test.CopyToStatic(staticarray,3200000);
-    //for(int i = 0; i < 3200000; i++)
-        //if(staticarray[i] != i)
-            //printf("wtf");
-    //delete [] staticarray;
     return 0;
 }
