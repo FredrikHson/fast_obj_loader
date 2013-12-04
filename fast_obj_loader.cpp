@@ -1,7 +1,7 @@
 #include "fast_obj_loader.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include "fastdynamic.h"
+#include "fastdynamic2.h"
 #ifdef _OPENMP
 #include <omp.h>
 #else
@@ -61,10 +61,39 @@ unsigned int getNextFaceNumber(char *line, size_t &offset, unsigned char &type, 
 
     return output;
 }
+
+void triangulate(obj *mesh)
+{
+    if(mesh == 0)
+        return;
+
+    // first count how many real faces will be needed
+
+    #pragma omp parallel
+    {
+        size_t numTris = 0;
+        #pragma omp for reduction(+:numTris)
+
+        for(size_t i = 0; i < mesh->numfaces; i++)
+        {
+            if(mesh->faces[i].quad)
+                numTris += 2;
+            else
+                numTris += 1;
+        }
+
+        #pragma omp single
+        {
+
+        }
+    }
+}
+
 // how much it should read at once to reduce the memory usage
 #define MEMORYOVERHEAD 1048576
 obj *loadObj(const char *filename)
 {
+    bool hasquads = 0;
     obj *output = new obj;
     FILE *f = fopen(filename, "rb");
 
@@ -288,7 +317,7 @@ obj *loadObj(const char *filename)
                                 case 0:
                                     if(v[0] == 4) // only support quads for now so so break out of loading more if it gets outside of that
                                     {
-                                        printf("uum quad\n");
+                                        hasquads = true;
                                         more = 0;
                                         break;
                                     }
@@ -300,7 +329,7 @@ obj *loadObj(const char *filename)
                                 case 1:
                                     if(v[1] == 4)
                                     {
-                                        printf("uum quad\n");
+                                        hasquads = true;
                                         more = 0;
                                         break;
                                     }
@@ -312,7 +341,7 @@ obj *loadObj(const char *filename)
                                 case 2:
                                     if(v[2] == 4)
                                     {
-                                        printf("uum quad\n");
+                                        hasquads = true;
                                         more = 0;
                                         break;
                                     }
@@ -460,6 +489,12 @@ obj *loadObj(const char *filename)
         delete [] lineends;
     }
 
+    if(hasquads)
+    {
+        printf("warning not triangulated\ntriangulate for better normalmap results\n");
+        triangulate(output);
+    }
+
     //printf("lines:%zu\n",linecount);
     //printf("numverts:%zu\n", output->numverts);
     //printf("numuvs:%zu\n", output->numuvs);
@@ -481,7 +516,7 @@ void writeObj(const char *filename, obj &input)
     if(!f)
         return;
 
-    printf("writing obj verts:%zu\n", input.numverts);
+    printf("writing obj verts:%u\n", input.numverts);
 
     for(int i = 0; i < input.numverts; i++)
         fprintf(f, "v %f %f %f\n", input.verts[i].x, input.verts[i].y, input.verts[i].z);
@@ -496,7 +531,7 @@ void writeObj(const char *filename, obj &input)
     {
         if(input.numnormals == 0 && input.numuvs == 0)
         {
-            fprintf(f, "f %i %i %i",
+            fprintf(f, "f %u %u %u",
                     input.faces[i].verts[0],
                     input.faces[i].verts[1],
                     input.faces[i].verts[2]
@@ -504,14 +539,14 @@ void writeObj(const char *filename, obj &input)
 
             if(input.faces[i].quad)
             {
-                fprintf(f, " %i",
+                fprintf(f, " %u",
                         input.faces[i].verts[3]
                        );
             }
         }
         else if(input.numnormals == 0 && input.numuvs != 0)
         {
-            fprintf(f, "f %i/%i %i/%i %i/%i",
+            fprintf(f, "f %u/%u %u/%u %u/%u",
                     input.faces[i].verts[0],
                     input.faces[i].uvs[0],
                     input.faces[i].verts[1],
@@ -522,7 +557,7 @@ void writeObj(const char *filename, obj &input)
 
             if(input.faces[i].quad)
             {
-                fprintf(f, " %i/%i",
+                fprintf(f, " %u/%u",
                         input.faces[i].verts[3],
                         input.faces[i].uvs[3]
                        );
@@ -530,7 +565,7 @@ void writeObj(const char *filename, obj &input)
         }
         else if(input.numnormals != 0 && input.numuvs == 0)
         {
-            fprintf(f, "f %i//%i %i//%i %i//%i",
+            fprintf(f, "f %u//%u %u//%u %u//%u",
                     input.faces[i].verts[0],
                     input.faces[i].normals[0],
                     input.faces[i].verts[1],
@@ -541,7 +576,7 @@ void writeObj(const char *filename, obj &input)
 
             if(input.faces[i].quad)
             {
-                fprintf(f, " %i//%i",
+                fprintf(f, " %u//%u",
                         input.faces[i].verts[3],
                         input.faces[i].normals[3]
                        );
@@ -549,7 +584,7 @@ void writeObj(const char *filename, obj &input)
         }
         else if(input.numnormals != 0 && input.numuvs != 0)
         {
-            fprintf(f, "f %i/%i/%i %i/%i/%i %i/%i/%i",
+            fprintf(f, "f %u/%u/%u %u/%u/%u %u/%u/%u",
                     input.faces[i].verts[0],
                     input.faces[i].uvs[0],
                     input.faces[i].normals[0],
@@ -562,7 +597,7 @@ void writeObj(const char *filename, obj &input)
                    );
 
             if(input.faces[i].quad)
-                fprintf(f, " %i/%i/%i", input.faces[i].verts[3], input.faces[i].uvs[3], input.faces[i].normals[3]);
+                fprintf(f, " %u/%u/%u", input.faces[i].verts[3], input.faces[i].uvs[3], input.faces[i].normals[3]);
         }
 
         fprintf(f, "\n");

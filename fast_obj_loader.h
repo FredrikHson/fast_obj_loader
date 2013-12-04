@@ -20,7 +20,12 @@ struct face
     unsigned int uvs[4];
     bool quad;
 };
-
+struct triangle
+{
+    unsigned int verts[3];
+    unsigned int normals[3];
+    unsigned int uvs[3];
+};
 struct obj
 {
     unsigned int numverts;
@@ -31,7 +36,7 @@ struct obj
     vec3 *verts;
     vec3 *normals;
     vec2 *uvs;
-    face *faces;
+    triangle *faces;
 
     obj()
     {
