@@ -53,16 +53,24 @@ struct obj
     ~obj()
     {
         if(verts)
+        {
             free(verts);
+        }
 
         if(normals)
+        {
             free(normals);
+        }
 
         if(uvs)
+        {
             free(uvs);
+        }
 
         if(faces)
+        {
             free(faces);
+        }
     }
 };
 

@@ -79,7 +79,9 @@ public:
             buckets = new bucket*[bucket_index + 1];
 
             for(size_t i = 0; i < bucket_count; i++)
+            {
                 buckets[i] = tmparray[i];
+            }
 
             delete [] tmparray;
 
@@ -101,7 +103,9 @@ public:
     void CopyToStatic(T *staticarray, size_t count)
     {
         if(count == 0)
+        {
             return;
+        }
 
         size_t numBuckets = count / bucket_size;
         size_t leftover = count % bucket_size;

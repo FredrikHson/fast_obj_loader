@@ -7,7 +7,9 @@ int main(int argc, char *argv[])
     int timestoload = 1;
 
     if(argc == 2)
-    sscanf(argv[1], "%20i", &timestoload);
+    {
+        sscanf(argv[1], "%20i", &timestoload);
+    }
 
     printf("starting to load file %i times\n", timestoload);
     timespec start, stop;
@@ -16,14 +18,14 @@ int main(int argc, char *argv[])
 
     for(int i = 0; i < timestoload; i++)
     {
-    //obj *testmesh=loadObj("../test.obj");
-    obj *testmesh = loadObj("../dragon_vrip_res2.obj");
+        //obj *testmesh=loadObj("../test.obj");
+        obj *testmesh = loadObj("../dragon_vrip_res2.obj");
 
-    //obj *testmesh=loadObj("../xyzrgb_dragon.obj");
-    //if(testmesh)
-    //writeObj("verification.obj", *testmesh);
+        //obj *testmesh=loadObj("../xyzrgb_dragon.obj");
+        //if(testmesh)
+        //writeObj("verification.obj", *testmesh);
 
-    delete testmesh;
+        delete testmesh;
     }
 
     clock_gettime(CLOCK_REALTIME, &stop);

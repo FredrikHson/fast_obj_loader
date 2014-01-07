@@ -57,7 +57,9 @@ unsigned int getNextFaceNumber(char *line, size_t &offset, unsigned char &type, 
         //sscanf(tmp,"%99u",&output);  0.6seconds vs atoi 0.36seconds from 0.2seconds without face loading
     }
     else
+    {
         valid = 0;
+    }
 
     return output;
 }
@@ -65,7 +67,9 @@ unsigned int getNextFaceNumber(char *line, size_t &offset, unsigned char &type, 
 void triangulate(obj *mesh)
 {
     if(mesh == 0)
+    {
         return;
+    }
 
     // first count how many real faces will be needed
 
@@ -77,9 +81,13 @@ void triangulate(obj *mesh)
         for(size_t i = 0; i < mesh->numfaces; i++)
         {
             if(mesh->faces[i].quad)
+            {
                 numTris += 2;
+            }
             else
+            {
                 numTris += 1;
+            }
         }
 
         #pragma omp single
@@ -110,7 +118,9 @@ obj *loadObj(const char *filename)
     size_t bufferLength = filelength;
 
     if(bufferLength > MEMORYOVERHEAD) // read in chunks of as long as MEMORYOVERHEAD is defined
+    {
         bufferLength = MEMORYOVERHEAD;
+    }
 
     //printf("filesize=%zu bytes\n",filelength);
     char *memoryfile = new char[bufferLength];
@@ -179,7 +189,9 @@ obj *loadObj(const char *filename)
                 size_t offset = 1;
 
                 for(int j = 0; j < i; j++)
+                {
                     offset += numtmpends[j];
+                }
 
                 tmpends[i].CopyToStatic(&lineends[offset], numtmpends[i]);
             }
@@ -354,7 +366,9 @@ obj *loadObj(const char *filename)
                     }
 
                     if(v[0] == 4)
+                    {
                         Face.quad = 1;
+                    }
                 }
             }
 
@@ -368,7 +382,9 @@ obj *loadObj(const char *filename)
                         output->verts = tmpptr;
                     }
                     else
+                    {
                         output->verts = (vec3 *)malloc(sizeof(vec3) * numverts);
+                    }
                 }
 
                 if(numnormals != 0)
@@ -379,7 +395,9 @@ obj *loadObj(const char *filename)
                         output->normals = tmpptr;
                     }
                     else
+                    {
                         output->normals = (vec3 *)malloc(sizeof(vec3) * numnormals);
+                    }
                 }
 
                 if(numuvs != 0)
@@ -390,7 +408,9 @@ obj *loadObj(const char *filename)
                         output->uvs = tmpptr;
                     }
                     else
+                    {
                         output->uvs = (vec2 *)malloc(sizeof(vec2) * numuvs);
+                    }
                 }
 
                 if(numfaces != 0)
@@ -401,7 +421,9 @@ obj *loadObj(const char *filename)
                         output->faces = tmpptr;
                     }
                     else
+                    {
                         output->faces = (face *)malloc(sizeof(face) * numfaces);
+                    }
                 }
             }
             #pragma omp for
@@ -411,7 +433,9 @@ obj *loadObj(const char *filename)
                 size_t offset = vertsoffset;
 
                 for(int j = 0; j < i; j++)
+                {
                     offset += numtmpverts[j];
+                }
 
                 tmpverts[i].CopyToStatic(&(output->verts[offset]), numtmpverts[i]);
             }
@@ -428,7 +452,9 @@ obj *loadObj(const char *filename)
                 size_t offset = normalsoffset;
 
                 for(int j = 0; j < i; j++)
+                {
                     offset += numtmpnormals[j];
+                }
 
                 tmpnormals[i].CopyToStatic(&(output->normals[offset]), numtmpnormals[i]);
             }
@@ -445,7 +471,9 @@ obj *loadObj(const char *filename)
                 size_t offset = uvsoffset;
 
                 for(int j = 0; j < i; j++)
+                {
                     offset += numtmpuvs[j];
+                }
 
                 tmpuvs[i].CopyToStatic(&(output->uvs[offset]), numtmpuvs[i]);
             }
@@ -462,7 +490,9 @@ obj *loadObj(const char *filename)
                 size_t offset = facesoffset;
 
                 for(int j = 0; j < i; j++)
+                {
                     offset += numtmpfaces[j];
+                }
 
                 tmpfaces[i].CopyToStatic(&(output->faces[offset]), numtmpfaces[i]);
             }
@@ -514,18 +544,26 @@ void writeObj(const char *filename, obj &input)
     FILE *f = fopen(filename, "wb");
 
     if(!f)
+    {
         return;
+    }
 
     printf("writing obj verts:%u\n", input.numverts);
 
     for(int i = 0; i < input.numverts; i++)
+    {
         fprintf(f, "v %f %f %f\n", input.verts[i].x, input.verts[i].y, input.verts[i].z);
+    }
 
     for(int i = 0; i < input.numnormals; i++)
+    {
         fprintf(f, "vn %f %f %f\n", input.normals[i].x, input.normals[i].y, input.normals[i].z);
+    }
 
     for(int i = 0; i < input.numuvs; i++)
+    {
         fprintf(f, "vt %f %f\n", input.uvs[i].x, input.uvs[i].y);
+    }
 
     for(int i = 0; i < input.numfaces; i++)
     {
@@ -597,7 +635,9 @@ void writeObj(const char *filename, obj &input)
                    );
 
             if(input.faces[i].quad)
+            {
                 fprintf(f, " %u/%u/%u", input.faces[i].verts[3], input.faces[i].uvs[3], input.faces[i].normals[3]);
+            }
         }
 
         fprintf(f, "\n");

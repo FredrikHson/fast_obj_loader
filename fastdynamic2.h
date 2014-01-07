@@ -44,20 +44,24 @@ public:
     ~FastDynamic()
     {
         if(contents)
+        {
             free(contents);
+        }
     }
     void Clear()
     {
         if(contents)
+        {
             free(contents);
+        }
 
-        contents = (T *)malloc(increaseSize*sizeof(T));
-        currentLength=increaseSize;
-        currentByteLength=increaseSize*sizeof(T);
+        contents = (T *)malloc(increaseSize * sizeof(T));
+        currentLength = increaseSize;
+        currentByteLength = increaseSize * sizeof(T);
     }
     T &operator[](size_t index)
     {
-      if(index >= currentLength)
+        if(index >= currentLength)
         {
             size_t newsize = (index / increaseSize) + 1;
             newsize *= increaseSize;
@@ -77,10 +81,14 @@ public:
     void CopyToStatic(T *staticarray, size_t count)
     {
         if(count == 0)
+        {
             return;
+        }
 
         if(count > currentLength)
+        {
             count = currentLength;
+        }
 
         memcpy(staticarray, contents, sizeof(T)*count);
     }
