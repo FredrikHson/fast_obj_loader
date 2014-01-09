@@ -1,0 +1,4 @@
+[filter "teslastyle"]
+    smudge = astyle -A1 -w -S -Y -U -k3 -j -z2 -xw -p -f
+    clean = astyle -A3 -w -S -Y -U -k3 -j -z2 -xw -p -f
+

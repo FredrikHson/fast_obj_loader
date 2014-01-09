@@ -1,0 +1,4 @@
+*.cpp   filter=teslastyle
+*.c     filter=teslastyle
+*.hpp   filter=teslastyle
+*.h     filter=teslastyle
