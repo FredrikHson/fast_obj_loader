@@ -20,10 +20,8 @@ unsigned int getNextFaceNumber(char *line, size_t &offset, unsigned char &type, 
     more = 1;
     unsigned int j = 0;
 
-    for(unsigned int i = 0; i < buflen; i++)
-    {
-        switch(line[i + offset])
-        {
+    for(unsigned int i = 0; i < buflen; i++) {
+        switch(line[i + offset]) {
             case 0:
                 more = 0;
                 i = buflen;
@@ -49,15 +47,12 @@ unsigned int getNextFaceNumber(char *line, size_t &offset, unsigned char &type, 
         }
     }
 
-    if(j != 0)
-    {
+    if(j != 0) {
         tmp[j] = 0;
         valid = 1;
         output = atoi(tmp);
         //sscanf(tmp,"%99u",&output);  0.6seconds vs atoi 0.36seconds from 0.2seconds without face loading
-    }
-    else
-    {
+    } else {
         valid = 0;
     }
 
@@ -66,8 +61,9 @@ unsigned int getNextFaceNumber(char *line, size_t &offset, unsigned char &type, 
 
 void triangulate(obj *mesh)
 {
-    if(mesh == 0)
+    if(mesh == 0) {
         return;
+    }
 
     // first count how many real faces will be needed
 
@@ -76,14 +72,10 @@ void triangulate(obj *mesh)
         size_t numTris = 0;
         #pragma omp for reduction(+:numTris)
 
-        for(size_t i = 0; i < mesh->numfaces; i++)
-        {
-            if(mesh->faces[i].quad)
-            {
+        for(size_t i = 0; i < mesh->numfaces; i++) {
+            if(mesh->faces[i].quad) {
                 numTris += 2;
-            }
-            else
-            {
+            } else {
                 numTris += 1;
             }
         }
@@ -103,8 +95,7 @@ obj *loadObj(const char *filename)
     obj *output = new obj;
     FILE *f = fopen(filename, "rb");
 
-    if(!f)
-    {
+    if(!f) {
         printf("file not found %s\n", filename);
         return 0;
     }
@@ -115,8 +106,7 @@ obj *loadObj(const char *filename)
     fseek(f, 0, SEEK_SET);
     size_t bufferLength = filelength;
 
-    if(bufferLength > MEMORYOVERHEAD) // read in chunks of as long as MEMORYOVERHEAD is defined
-    {
+    if(bufferLength > MEMORYOVERHEAD) { // read in chunks of as long as MEMORYOVERHEAD is defined
         bufferLength = MEMORYOVERHEAD;
     }
 
@@ -128,8 +118,7 @@ obj *loadObj(const char *filename)
     size_t fileoffset = 0;
 
 
-    while(fileoffset < filelength)
-    {
+    while(fileoffset < filelength) {
         size_t numverts   = 0;
         size_t numnormals = 0;
         size_t numuvs     = 0;
@@ -156,18 +145,15 @@ obj *loadObj(const char *filename)
                 tmpends = new FastDynamic<unsigned int>[numthreads];
                 numtmpends = new size_t[numthreads];
 
-                for(int i = 0; i < numthreads; i++)
-                {
+                for(int i = 0; i < numthreads; i++) {
                     tmpends[i].SetContainer_size(8192);
                     numtmpends[i] = 0;
                 }
             }
             #pragma omp for reduction(+:linecount,numEnds)
 
-            for(size_t i = 0; i < bufferLength; i++)
-            {
-                if(memoryfile[i] == '\n' || (i + fileoffset) >= filelength) // seems to work even with dos newlines \r\n
-                {
+            for(size_t i = 0; i < bufferLength; i++) {
+                if(memoryfile[i] == '\n' || (i + fileoffset) >= filelength) { // seems to work even with dos newlines \r\n
                     tmpends[threadid][numEnds] = i;
                     numtmpends[threadid]++;
                     numEnds++;
@@ -182,12 +168,10 @@ obj *loadObj(const char *filename)
             }
             #pragma omp for
 
-            for(int i = 0; i < numthreads; i++)
-            {
+            for(int i = 0; i < numthreads; i++) {
                 size_t offset = 1;
 
-                for(int j = 0; j < i; j++)
-                {
+                for(int j = 0; j < i; j++) {
                     offset += numtmpends[j];
                 }
 
@@ -219,8 +203,7 @@ obj *loadObj(const char *filename)
                 tmpverts = new FastDynamic<vec3>[numthreads];
                 numtmpverts = new size_t[numthreads];
 
-                for(int i = 0; i < numthreads; i++)
-                {
+                for(int i = 0; i < numthreads; i++) {
                     tmpverts[i].SetContainer_size(8192);
                     numtmpverts[i] = 0;
                 }
@@ -228,8 +211,7 @@ obj *loadObj(const char *filename)
                 tmpnormals = new FastDynamic<vec3>[numthreads];
                 numtmpnormals = new size_t[numthreads];
 
-                for(int i = 0; i < numthreads; i++)
-                {
+                for(int i = 0; i < numthreads; i++) {
                     tmpnormals[i].SetContainer_size(8192);
                     numtmpnormals[i] = 0;
                 }
@@ -237,8 +219,7 @@ obj *loadObj(const char *filename)
                 tmpuvs = new FastDynamic<vec2>[numthreads];
                 numtmpuvs = new size_t[numthreads];
 
-                for(int i = 0; i < numthreads; i++)
-                {
+                for(int i = 0; i < numthreads; i++) {
                     tmpuvs[i].SetContainer_size(8192);
                     numtmpuvs[i] = 0;
                 }
@@ -246,21 +227,18 @@ obj *loadObj(const char *filename)
                 tmpfaces = new FastDynamic<face>[numthreads];
                 numtmpfaces = new size_t[numthreads];
 
-                for(int i = 0; i < numthreads; i++)
-                {
+                for(int i = 0; i < numthreads; i++) {
                     tmpfaces[i].SetContainer_size(8192);
                     numtmpfaces[i] = 0;
                 }
             }
             #pragma omp for reduction(+:numverts,numfaces,numnormals,numuvs)
 
-            for(int i = 1; i < numEnds; i++)
-            {
+            for(int i = 1; i < numEnds; i++) {
                 char line[1024] = {0};
                 memcpy(&line, &memoryfile[lineends[i - 1] + 1], lineends[i] - lineends[i - 1] - 1);
 
-                if(line[0] == 'v' && line[1] == ' ')
-                {
+                if(line[0] == 'v' && line[1] == ' ') {
                     char *l = line + 2;
                     char *tmpl;
                     vec3 vert;
@@ -273,9 +251,7 @@ obj *loadObj(const char *filename)
                     tmpverts[threadid][numtmpverts[threadid]] = vert;
                     numtmpverts[threadid]++;
                     numverts++;
-                }
-                else if(line[0] == 'v' && line[1] == 'n' && line[2] == ' ')
-                {
+                } else if(line[0] == 'v' && line[1] == 'n' && line[2] == ' ') {
                     char *l = line + 3;
                     char *tmpl;
                     vec3 normal;
@@ -288,9 +264,7 @@ obj *loadObj(const char *filename)
                     tmpnormals[threadid][numtmpnormals[threadid]] = normal;
                     numtmpnormals[threadid]++;
                     numnormals++;
-                }
-                else if(line[0] == 'v' && line[1] == 't' && line[2] == ' ')
-                {
+                } else if(line[0] == 'v' && line[1] == 't' && line[2] == ' ') {
                     char *l = line + 3;
                     char *tmpl;
                     vec2 uv;
@@ -301,9 +275,7 @@ obj *loadObj(const char *filename)
                     tmpuvs[threadid][numtmpuvs[threadid]] = uv;
                     numtmpuvs[threadid]++;
                     numuvs++;
-                }
-                else if(line[0] == 'f' && line[1] == ' ')
-                {
+                } else if(line[0] == 'f' && line[1] == ' ') {
                     char *data = line + 2;
                     size_t offset = 0;
                     bool more = 1;
@@ -315,18 +287,14 @@ obj *loadObj(const char *filename)
                     numtmpfaces[threadid]++;
                     unsigned char v[3] = {0};
 
-                    while(more)
-                    {
+                    while(more) {
                         bool valid;
                         unsigned int faceidnum = getNextFaceNumber(data, offset, type, nexttype, more, valid);
 
-                        if(valid)
-                        {
-                            switch(type)
-                            {
+                        if(valid) {
+                            switch(type) {
                                 case 0:
-                                    if(v[0] == 4) // only support quads for now so so break out of loading more if it gets outside of that
-                                    {
+                                    if(v[0] == 4) { // only support quads for now so so break out of loading more if it gets outside of that
                                         hasquads = true;
                                         more = 0;
                                         break;
@@ -337,8 +305,7 @@ obj *loadObj(const char *filename)
                                     break;
 
                                 case 1:
-                                    if(v[1] == 4)
-                                    {
+                                    if(v[1] == 4) {
                                         hasquads = true;
                                         more = 0;
                                         break;
@@ -349,8 +316,7 @@ obj *loadObj(const char *filename)
                                     break;
 
                                 case 2:
-                                    if(v[2] == 4)
-                                    {
+                                    if(v[2] == 4) {
                                         hasquads = true;
                                         more = 0;
                                         break;
@@ -363,8 +329,7 @@ obj *loadObj(const char *filename)
                         }
                     }
 
-                    if(v[0] == 4)
-                    {
+                    if(v[0] == 4) {
                         Face.quad = 1;
                     }
                 }
@@ -372,66 +337,48 @@ obj *loadObj(const char *filename)
 
             #pragma omp single
             {
-                if(numverts != 0)
-                {
-                    if(output->verts)
-                    {
+                if(numverts != 0) {
+                    if(output->verts) {
                         vec3 *tmpptr = (vec3 *)realloc(output->verts, sizeof(vec3) * (output->numverts + numverts));
                         output->verts = tmpptr;
-                    }
-                    else
-                    {
+                    } else {
                         output->verts = (vec3 *)malloc(sizeof(vec3) * numverts);
                     }
                 }
 
-                if(numnormals != 0)
-                {
-                    if(output->normals)
-                    {
+                if(numnormals != 0) {
+                    if(output->normals) {
                         vec3 *tmpptr = (vec3 *)realloc(output->normals, sizeof(vec3) * (output->numnormals + numnormals));
                         output->normals = tmpptr;
-                    }
-                    else
-                    {
+                    } else {
                         output->normals = (vec3 *)malloc(sizeof(vec3) * numnormals);
                     }
                 }
 
-                if(numuvs != 0)
-                {
-                    if(output->uvs)
-                    {
+                if(numuvs != 0) {
+                    if(output->uvs) {
                         vec2 *tmpptr = (vec2 *)realloc(output->uvs, sizeof(vec2) * (output->numuvs + numuvs));
                         output->uvs = tmpptr;
-                    }
-                    else
-                    {
+                    } else {
                         output->uvs = (vec2 *)malloc(sizeof(vec2) * numuvs);
                     }
                 }
 
-                if(numfaces != 0)
-                {
-                    if(output->faces)
-                    {
+                if(numfaces != 0) {
+                    if(output->faces) {
                         face *tmpptr = (face *)realloc(output->faces, sizeof(face) * (output->numfaces + numfaces));
                         output->faces = tmpptr;
-                    }
-                    else
-                    {
+                    } else {
                         output->faces = (face *)malloc(sizeof(face) * numfaces);
                     }
                 }
             }
             #pragma omp for
 
-            for(int i = 0; i < numthreads; i++)
-            {
+            for(int i = 0; i < numthreads; i++) {
                 size_t offset = vertsoffset;
 
-                for(int j = 0; j < i; j++)
-                {
+                for(int j = 0; j < i; j++) {
                     offset += numtmpverts[j];
                 }
 
@@ -445,12 +392,10 @@ obj *loadObj(const char *filename)
             }
             #pragma omp for
 
-            for(int i = 0; i < numthreads; i++)
-            {
+            for(int i = 0; i < numthreads; i++) {
                 size_t offset = normalsoffset;
 
-                for(int j = 0; j < i; j++)
-                {
+                for(int j = 0; j < i; j++) {
                     offset += numtmpnormals[j];
                 }
 
@@ -464,12 +409,10 @@ obj *loadObj(const char *filename)
             }
             #pragma omp for
 
-            for(int i = 0; i < numthreads; i++)
-            {
+            for(int i = 0; i < numthreads; i++) {
                 size_t offset = uvsoffset;
 
-                for(int j = 0; j < i; j++)
-                {
+                for(int j = 0; j < i; j++) {
                     offset += numtmpuvs[j];
                 }
 
@@ -483,12 +426,10 @@ obj *loadObj(const char *filename)
             }
             #pragma omp for
 
-            for(int i = 0; i < numthreads; i++)
-            {
+            for(int i = 0; i < numthreads; i++) {
                 size_t offset = facesoffset;
 
-                for(int j = 0; j < i; j++)
-                {
+                for(int j = 0; j < i; j++) {
                     offset += numtmpfaces[j];
                 }
 
@@ -517,8 +458,7 @@ obj *loadObj(const char *filename)
         delete [] lineends;
     }
 
-    if(hasquads)
-    {
+    if(hasquads) {
         printf("warning not triangulated\ntriangulate for better normalmap results\n");
         triangulate(output);
     }
@@ -541,47 +481,38 @@ void writeObj(const char *filename, obj &input)
 {
     FILE *f = fopen(filename, "wb");
 
-    if(!f)
-    {
+    if(!f) {
         return;
     }
 
     printf("writing obj verts:%u\n", input.numverts);
 
-    for(int i = 0; i < input.numverts; i++)
-    {
+    for(int i = 0; i < input.numverts; i++) {
         fprintf(f, "v %f %f %f\n", input.verts[i].x, input.verts[i].y, input.verts[i].z);
     }
 
-    for(int i = 0; i < input.numnormals; i++)
-    {
+    for(int i = 0; i < input.numnormals; i++) {
         fprintf(f, "vn %f %f %f\n", input.normals[i].x, input.normals[i].y, input.normals[i].z);
     }
 
-    for(int i = 0; i < input.numuvs; i++)
-    {
+    for(int i = 0; i < input.numuvs; i++) {
         fprintf(f, "vt %f %f\n", input.uvs[i].x, input.uvs[i].y);
     }
 
-    for(int i = 0; i < input.numfaces; i++)
-    {
-        if(input.numnormals == 0 && input.numuvs == 0)
-        {
+    for(int i = 0; i < input.numfaces; i++) {
+        if(input.numnormals == 0 && input.numuvs == 0) {
             fprintf(f, "f %u %u %u",
                     input.faces[i].verts[0],
                     input.faces[i].verts[1],
                     input.faces[i].verts[2]
                    );
 
-            if(input.faces[i].quad)
-            {
+            if(input.faces[i].quad) {
                 fprintf(f, " %u",
                         input.faces[i].verts[3]
                        );
             }
-        }
-        else if(input.numnormals == 0 && input.numuvs != 0)
-        {
+        } else if(input.numnormals == 0 && input.numuvs != 0) {
             fprintf(f, "f %u/%u %u/%u %u/%u",
                     input.faces[i].verts[0],
                     input.faces[i].uvs[0],
@@ -591,16 +522,13 @@ void writeObj(const char *filename, obj &input)
                     input.faces[i].uvs[2]
                    );
 
-            if(input.faces[i].quad)
-            {
+            if(input.faces[i].quad) {
                 fprintf(f, " %u/%u",
                         input.faces[i].verts[3],
                         input.faces[i].uvs[3]
                        );
             }
-        }
-        else if(input.numnormals != 0 && input.numuvs == 0)
-        {
+        } else if(input.numnormals != 0 && input.numuvs == 0) {
             fprintf(f, "f %u//%u %u//%u %u//%u",
                     input.faces[i].verts[0],
                     input.faces[i].normals[0],
@@ -610,16 +538,13 @@ void writeObj(const char *filename, obj &input)
                     input.faces[i].normals[2]
                    );
 
-            if(input.faces[i].quad)
-            {
+            if(input.faces[i].quad) {
                 fprintf(f, " %u//%u",
                         input.faces[i].verts[3],
                         input.faces[i].normals[3]
                        );
             }
-        }
-        else if(input.numnormals != 0 && input.numuvs != 0)
-        {
+        } else if(input.numnormals != 0 && input.numuvs != 0) {
             fprintf(f, "f %u/%u/%u %u/%u/%u %u/%u/%u",
                     input.faces[i].verts[0],
                     input.faces[i].uvs[0],
@@ -632,8 +557,7 @@ void writeObj(const char *filename, obj &input)
                     input.faces[i].normals[2]
                    );
 
-            if(input.faces[i].quad)
-            {
+            if(input.faces[i].quad) {
                 fprintf(f, " %u/%u/%u", input.faces[i].verts[3], input.faces[i].uvs[3], input.faces[i].normals[3]);
             }
         }
@@ -643,3 +567,4 @@ void writeObj(const char *filename, obj &input)
 
     fclose(f);
 }
+

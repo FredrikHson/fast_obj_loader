@@ -6,8 +6,7 @@
 template <class T>
 class FastDynamic //array that expands when it runs out of bounds
 {
-    struct bucket
-    {
+    struct bucket {
         T *contents;
     };
     bucket **buckets;
@@ -40,8 +39,7 @@ public:
     }
     void SetContainer_size(size_t newsize) // will delete all contents use constructor instead if possible
     {
-        for(size_t i = 0; i < bucket_count; i++)
-        {
+        for(size_t i = 0; i < bucket_count; i++) {
             delete [](*buckets[i]).contents;
             delete buckets[i];
         }
@@ -56,8 +54,7 @@ public:
     }
     ~FastDynamic()
     {
-        for(size_t i = 0; i < bucket_count; i++)
-        {
+        for(size_t i = 0; i < bucket_count; i++) {
             delete [](*buckets[i]).contents;
             delete buckets[i];
         }
@@ -73,20 +70,17 @@ public:
         size_t bucket_index = index / bucket_size;
         size_t entry = index % bucket_size;
 
-        if(bucket_index + 1 > bucket_count) // resize array
-        {
+        if(bucket_index + 1 > bucket_count) { // resize array
             bucket **tmparray = buckets;
             buckets = new bucket*[bucket_index + 1];
 
-            for(size_t i = 0; i < bucket_count; i++)
-            {
+            for(size_t i = 0; i < bucket_count; i++) {
                 buckets[i] = tmparray[i];
             }
 
             delete [] tmparray;
 
-            for(size_t i = bucket_count; i < bucket_index + 1; i++)
-            {
+            for(size_t i = bucket_count; i < bucket_index + 1; i++) {
                 buckets[i] = new bucket;
                 (*buckets[i]).contents = new T[bucket_size];
             }
@@ -102,8 +96,7 @@ public:
     }
     void CopyToStatic(T *staticarray, size_t count)
     {
-        if(count == 0)
-        {
+        if(count == 0) {
             return;
         }
 
@@ -112,8 +105,7 @@ public:
         T *buf = staticarray;
         size_t Bsize = bucket_size * sizeof(T);
 
-        for(size_t i = 0; i < numBuckets; i++)
-        {
+        for(size_t i = 0; i < numBuckets; i++) {
             memcpy(buf, (*buckets[i]).contents, Bsize);
             buf += bucket_size;
         }
@@ -123,3 +115,4 @@ public:
     }
 };
 #endif
+

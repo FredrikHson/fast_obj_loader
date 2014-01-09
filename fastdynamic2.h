@@ -43,15 +43,13 @@ public:
     }
     ~FastDynamic()
     {
-        if(contents)
-        {
+        if(contents) {
             free(contents);
         }
     }
     void Clear()
     {
-        if(contents)
-        {
+        if(contents) {
             free(contents);
         }
 
@@ -61,8 +59,7 @@ public:
     }
     T &operator[](size_t index)
     {
-        if(index >= currentLength)
-        {
+        if(index >= currentLength) {
             size_t newsize = (index / increaseSize) + 1;
             newsize *= increaseSize;
             //printf("currentLength:%u  newsize:%u index:%u increaseSize:%i\n", currentLength, newsize, index, increaseSize);
@@ -80,13 +77,11 @@ public:
     }
     void CopyToStatic(T *staticarray, size_t count)
     {
-        if(count == 0)
-        {
+        if(count == 0) {
             return;
         }
 
-        if(count > currentLength)
-        {
+        if(count > currentLength) {
             count = currentLength;
         }
 
@@ -94,3 +89,4 @@ public:
     }
 };
 #endif
+
