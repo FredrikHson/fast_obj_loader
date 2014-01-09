@@ -67,9 +67,7 @@ unsigned int getNextFaceNumber(char *line, size_t &offset, unsigned char &type, 
 void triangulate(obj *mesh)
 {
     if(mesh == 0)
-    {
         return;
-    }
 
     // first count how many real faces will be needed
 
