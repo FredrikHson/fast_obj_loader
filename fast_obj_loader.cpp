@@ -317,7 +317,7 @@ obj *loadObj(const char *filename)
                     face Face;
                     triangle &currenttri = tmpfaces[threadid][numtmpfaces[threadid]];
                     triangle tri;
-                    tmpfaces[threadid][numtmpfaces[threadid]]=tri;
+                    tmpfaces[threadid][numtmpfaces[threadid]] = tri;
                     Face.quad = 0;
                     numtmpfaces[threadid]++;
                     unsigned char v[3] = {0};
@@ -385,13 +385,6 @@ obj *loadObj(const char *filename)
 
                     if(v[0] == 4)
                     {
-/*                        printf("numtmpfaces=%u:tid:%u,allocated:%u,bytes:%u\n",
-                               numtmpfaces[threadid],
-                               threadid,
-                               tmpfaces[threadid].currentLength,
-                               tmpfaces[threadid].currentByteLength);
-*/
-
                         triangle &currenttri2 = tmpfaces[threadid][numtmpfaces[threadid]];
                         numtmpfaces[threadid]++;
                         numfaces++;
