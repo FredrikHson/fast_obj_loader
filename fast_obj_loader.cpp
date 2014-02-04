@@ -63,7 +63,7 @@ unsigned int getNextFaceNumber(char *line, size_t &offset, unsigned char &type, 
 
     return output;
 }
-
+/*
 void triangulate(obj *mesh)
 {
     if(mesh == 0)
@@ -96,9 +96,11 @@ void triangulate(obj *mesh)
         }
     }
 }
-
+*/
 // how much it should read at once to reduce the memory usage
 #define MEMORYOVERHEAD 1048576
+#define CONTAINER_SIZE 8192
+
 obj *loadObj(const char *filename)
 {
     bool hasquads = 0;
@@ -160,7 +162,7 @@ obj *loadObj(const char *filename)
 
                 for(int i = 0; i < numthreads; i++)
                 {
-                    tmpends[i].SetContainer_size(8192);
+                    tmpends[i].SetContainer_size(CONTAINER_SIZE);
                     numtmpends[i] = 0;
                 }
             }
@@ -206,7 +208,7 @@ obj *loadObj(const char *filename)
         FastDynamic<vec3> *tmpverts;
         FastDynamic<vec3> *tmpnormals;
         FastDynamic<vec2> *tmpuvs;
-        FastDynamic<face> *tmpfaces;
+        FastDynamic<triangle> *tmpfaces;
         size_t *numtmpverts;
         size_t *numtmpnormals;
         size_t *numtmpuvs;
@@ -223,7 +225,7 @@ obj *loadObj(const char *filename)
 
                 for(int i = 0; i < numthreads; i++)
                 {
-                    tmpverts[i].SetContainer_size(8192);
+                    tmpverts[i].SetContainer_size(CONTAINER_SIZE);
                     numtmpverts[i] = 0;
                 }
 
@@ -232,7 +234,7 @@ obj *loadObj(const char *filename)
 
                 for(int i = 0; i < numthreads; i++)
                 {
-                    tmpnormals[i].SetContainer_size(8192);
+                    tmpnormals[i].SetContainer_size(CONTAINER_SIZE);
                     numtmpnormals[i] = 0;
                 }
 
@@ -241,16 +243,16 @@ obj *loadObj(const char *filename)
 
                 for(int i = 0; i < numthreads; i++)
                 {
-                    tmpuvs[i].SetContainer_size(8192);
+                    tmpuvs[i].SetContainer_size(CONTAINER_SIZE);
                     numtmpuvs[i] = 0;
                 }
 
-                tmpfaces = new FastDynamic<face>[numthreads];
+                tmpfaces = new FastDynamic<triangle>[numthreads];
                 numtmpfaces = new size_t[numthreads];
 
                 for(int i = 0; i < numthreads; i++)
                 {
-                    tmpfaces[i].SetContainer_size(8192);
+                    tmpfaces[i].SetContainer_size(CONTAINER_SIZE);
                     numtmpfaces[i] = 0;
                 }
             }
@@ -312,7 +314,10 @@ obj *loadObj(const char *filename)
                     unsigned char type = 0;
                     unsigned char nexttype = 0;
                     numfaces++;
-                    face &Face = tmpfaces[threadid][numtmpfaces[threadid]];
+                    face Face;
+                    triangle &currenttri = tmpfaces[threadid][numtmpfaces[threadid]];
+                    triangle tri;
+                    tmpfaces[threadid][numtmpfaces[threadid]]=tri;
                     Face.quad = 0;
                     numtmpfaces[threadid]++;
                     unsigned char v[3] = {0};
@@ -365,9 +370,43 @@ obj *loadObj(const char *filename)
                         }
                     }
 
+
+                    currenttri.verts[0] = Face.verts[0];
+                    currenttri.verts[1] = Face.verts[1];
+                    currenttri.verts[2] = Face.verts[2];
+
+                    currenttri.uvs[0] = Face.uvs[0];
+                    currenttri.uvs[1] = Face.uvs[1];
+                    currenttri.uvs[2] = Face.uvs[2];
+
+                    currenttri.normals[0] = Face.normals[0];
+                    currenttri.normals[1] = Face.normals[1];
+                    currenttri.normals[2] = Face.normals[2];
+
                     if(v[0] == 4)
                     {
-                        Face.quad = 1;
+/*                        printf("numtmpfaces=%u:tid:%u,allocated:%u,bytes:%u\n",
+                               numtmpfaces[threadid],
+                               threadid,
+                               tmpfaces[threadid].currentLength,
+                               tmpfaces[threadid].currentByteLength);
+*/
+
+                        triangle &currenttri2 = tmpfaces[threadid][numtmpfaces[threadid]];
+                        numtmpfaces[threadid]++;
+                        numfaces++;
+
+                        currenttri2.verts[0] = Face.verts[2];
+                        currenttri2.verts[1] = Face.verts[3];
+                        currenttri2.verts[2] = Face.verts[0];
+
+                        currenttri2.uvs[0] = Face.uvs[2];
+                        currenttri2.uvs[1] = Face.uvs[3];
+                        currenttri2.uvs[2] = Face.uvs[0];
+
+                        currenttri2.normals[0] = Face.normals[2];
+                        currenttri2.normals[1] = Face.normals[3];
+                        currenttri2.normals[2] = Face.normals[0];
                     }
                 }
             }
@@ -417,12 +456,12 @@ obj *loadObj(const char *filename)
                 {
                     if(output->faces)
                     {
-                        face *tmpptr = (face *)realloc(output->faces, sizeof(face) * (output->numfaces + numfaces));
+                        triangle *tmpptr = (triangle *)realloc(output->faces, sizeof(triangle) * (output->numfaces + numfaces));
                         output->faces = tmpptr;
                     }
                     else
                     {
-                        output->faces = (face *)malloc(sizeof(face) * numfaces);
+                        output->faces = (triangle *)malloc(sizeof(triangle) * numfaces);
                     }
                 }
             }
@@ -522,7 +561,7 @@ obj *loadObj(const char *filename)
     if(hasquads)
     {
         printf("warning not triangulated\ntriangulate for better normalmap results\n");
-        triangulate(output);
+        //triangulate(output);
     }
 
     //printf("lines:%zu\n",linecount);
@@ -531,8 +570,7 @@ obj *loadObj(const char *filename)
     //printf("numnormals:%zu\n", output->numnormals);
     //printf("numfaces:%zu\n", output->numfaces);
     clock_gettime(CLOCK_REALTIME, &stop);
-    calltime = (stop.tv_sec - start.tv_sec) + (stop.tv_nsec - start.tv_nsec) / 1000000000.0;
-    //    printf("done parsing file %lfseconds\n",calltime);
+
     delete [] memoryfile;
     fclose(f);
     return output;
@@ -575,12 +613,12 @@ void writeObj(const char *filename, obj &input)
                     input.faces[i].verts[2]
                    );
 
-            if(input.faces[i].quad)
-            {
-                fprintf(f, " %u",
-                        input.faces[i].verts[3]
-                       );
-            }
+            //if(input.faces[i].quad)
+            //{
+            //fprintf(f, " %u",
+            //input.faces[i].verts[3]
+            //);
+            //}
         }
         else if(input.numnormals == 0 && input.numuvs != 0)
         {
@@ -593,13 +631,13 @@ void writeObj(const char *filename, obj &input)
                     input.faces[i].uvs[2]
                    );
 
-            if(input.faces[i].quad)
-            {
-                fprintf(f, " %u/%u",
-                        input.faces[i].verts[3],
-                        input.faces[i].uvs[3]
-                       );
-            }
+            //if(input.faces[i].quad)
+            //{
+            //fprintf(f, " %u/%u",
+            //input.faces[i].verts[3],
+            //input.faces[i].uvs[3]
+            //);
+            //}
         }
         else if(input.numnormals != 0 && input.numuvs == 0)
         {
@@ -612,13 +650,13 @@ void writeObj(const char *filename, obj &input)
                     input.faces[i].normals[2]
                    );
 
-            if(input.faces[i].quad)
-            {
-                fprintf(f, " %u//%u",
-                        input.faces[i].verts[3],
-                        input.faces[i].normals[3]
-                       );
-            }
+            //if(input.faces[i].quad)
+            //{
+            //fprintf(f, " %u//%u",
+            //input.faces[i].verts[3],
+            //input.faces[i].normals[3]
+            //);
+            //}
         }
         else if(input.numnormals != 0 && input.numuvs != 0)
         {
@@ -634,10 +672,10 @@ void writeObj(const char *filename, obj &input)
                     input.faces[i].normals[2]
                    );
 
-            if(input.faces[i].quad)
-            {
-                fprintf(f, " %u/%u/%u", input.faces[i].verts[3], input.faces[i].uvs[3], input.faces[i].normals[3]);
-            }
+            //if(input.faces[i].quad)
+            //{
+            //fprintf(f, " %u/%u/%u", input.faces[i].verts[3], input.faces[i].uvs[3], input.faces[i].normals[3]);
+            //}
         }
 
         fprintf(f, "\n");
