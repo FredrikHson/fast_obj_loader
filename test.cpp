@@ -6,8 +6,7 @@ int main(int argc, char *argv[])
 {
     int timestoload = 1;
 
-    if(argc == 2)
-    {
+    if(argc == 2) {
         sscanf(argv[1], "%20i", &timestoload);
     }
 
@@ -16,8 +15,7 @@ int main(int argc, char *argv[])
     clock_gettime(CLOCK_REALTIME, &start);
     double calltime;
 
-    for(int i = 0; i < timestoload; i++)
-    {
+    for(int i = 0; i < timestoload; i++) {
         //obj *testmesh=loadObj("../test.obj");
         obj *testmesh = loadObj("../dragon_vrip_res2.obj");
 
@@ -34,3 +32,4 @@ int main(int argc, char *argv[])
 
     return 0;
 }
+
