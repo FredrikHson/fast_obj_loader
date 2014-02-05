@@ -2,26 +2,31 @@
 #include <time.h>
 #include <stdio.h>
 #include "fastdynamic2.h"
+
+
 int main(int argc, char *argv[])
 {
     int timestoload = 1;
 
-    if(argc == 2) {
-        sscanf(argv[1], "%20i", &timestoload);
+    if(argc == 1)
+    {
+        printf("usage testobjloader filename.obj 5\n");
+        return 0;
     }
 
-    printf("starting to load file %i times\n", timestoload);
+    if(argc == 3)
+    {
+        sscanf(argv[2], "%20i", &timestoload);
+    }
+
+    printf("starting to load %s %i times\n", argv[1], timestoload);
     timespec start, stop;
     clock_gettime(CLOCK_REALTIME, &start);
     double calltime;
 
-    for(int i = 0; i < timestoload; i++) {
-        //obj *testmesh=loadObj("../test.obj");
-        obj *testmesh = loadObj("../dragon_vrip_res2.obj");
-
-        //obj *testmesh=loadObj("../xyzrgb_dragon.obj");
-        //if(testmesh)
-        //writeObj("verification.obj", *testmesh);
+    for(int i = 0; i < timestoload; i++)
+    {
+        obj *testmesh = loadObj(argv[1]);
 
         delete testmesh;
     }
@@ -32,4 +37,3 @@ int main(int argc, char *argv[])
 
     return 0;
 }
-
