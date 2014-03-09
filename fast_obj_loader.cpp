@@ -157,7 +157,7 @@ obj *loadObj(const char *filename)
             int threadid = omp_get_thread_num();
             #pragma omp single
             {
-                tmpends = new FastDynamic<unsigned int>[numthreads];
+                tmpends = new FastDynamic<size_t>[numthreads];
                 numtmpends = new size_t[numthreads];
 
                 for(int i = 0; i < numthreads; i++)
