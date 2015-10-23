@@ -124,11 +124,7 @@ obj *loadObj(const char *filename)
         bufferLength = MEMORYOVERHEAD;
     }
 
-    //printf("filesize=%zu bytes\n",filelength);
     char *memoryfile = new char[bufferLength];
-    timespec start, stop;
-    clock_gettime(CLOCK_REALTIME, &start);
-    double calltime;
     size_t fileoffset = 0;
 
 
@@ -316,7 +312,7 @@ obj *loadObj(const char *filename)
                     numfaces++;
                     face Face;
                     triangle &currenttri = tmpfaces[threadid][numtmpfaces[threadid]];
-                    triangle tri;
+                    triangle tri={0};
                     tmpfaces[threadid][numtmpfaces[threadid]] = tri;
                     Face.quad = 0;
                     numtmpfaces[threadid]++;
@@ -562,7 +558,6 @@ obj *loadObj(const char *filename)
     //printf("numuvs:%zu\n", output->numuvs);
     //printf("numnormals:%zu\n", output->numnormals);
     //printf("numfaces:%zu\n", output->numfaces);
-    clock_gettime(CLOCK_REALTIME, &stop);
 
     delete [] memoryfile;
     fclose(f);
@@ -581,22 +576,22 @@ void writeObj(const char *filename, obj &input)
 
     printf("writing obj verts:%u\n", input.numverts);
 
-    for(int i = 0; i < input.numverts; i++)
+    for(unsigned int i = 0; i < input.numverts; i++)
     {
         fprintf(f, "v %f %f %f\n", input.verts[i].x, input.verts[i].y, input.verts[i].z);
     }
 
-    for(int i = 0; i < input.numnormals; i++)
+    for(unsigned int i = 0; i < input.numnormals; i++)
     {
         fprintf(f, "vn %f %f %f\n", input.normals[i].x, input.normals[i].y, input.normals[i].z);
     }
 
-    for(int i = 0; i < input.numuvs; i++)
+    for(unsigned int i = 0; i < input.numuvs; i++)
     {
         fprintf(f, "vt %f %f\n", input.uvs[i].x, input.uvs[i].y);
     }
 
-    for(int i = 0; i < input.numfaces; i++)
+    for(unsigned int i = 0; i < input.numfaces; i++)
     {
         if(input.numnormals == 0 && input.numuvs == 0)
         {
