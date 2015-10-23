@@ -14,7 +14,7 @@ public:
     size_t increaseSize; // in bytes so numnew*contentssize in the SetContainer_size
     size_t currentLength; // not how many entries have been written just how many have been allocated
     size_t currentByteLength;
-    FastDynamic(size_t increaseSize)
+    explicit FastDynamic(size_t increaseSize)
     {
         this->increaseSize = increaseSize;
         contents = (T*)malloc(this->increaseSize * sizeof(T));
@@ -22,7 +22,7 @@ public:
         currentByteLength = this->increaseSize * sizeof(T);
 
     }
-    FastDynamic(const FastDynamic<T>& old) // this will differ as much as that it will copy while the old one didn't
+    explicit FastDynamic(const FastDynamic<T>& old) // this will differ as much as that it will copy while the old one didn't
     {
         this->increaseSize = old.increaseSize;
         contents = (T*)malloc(old.currentByteLength);
