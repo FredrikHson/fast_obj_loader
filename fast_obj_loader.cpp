@@ -109,7 +109,7 @@ obj* loadObj(const char* filename)
 
     if(!f)
     {
-        printf("file not found %s\n", filename);
+        fprintf(stderr, "file not found %s\n", filename);
         return 0;
     }
 
@@ -549,7 +549,7 @@ obj* loadObj(const char* filename)
 
     if(hasquads)
     {
-        printf("warning not triangulated\ntriangulate for better normalmap results\n");
+        fprintf(stderr, "warning not triangulated\ntriangulate for better normalmap results\n");
         //triangulate(output);
     }
 
