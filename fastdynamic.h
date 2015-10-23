@@ -6,10 +6,11 @@
 template <class T>
 class FastDynamic //array that expands when it runs out of bounds
 {
-    struct bucket {
-        T *contents;
+    struct bucket
+    {
+        T* contents;
     };
-    bucket **buckets;
+    bucket** buckets;
 public:
     size_t bucket_size;
     size_t bucket_count;
@@ -21,7 +22,7 @@ public:
         buckets[0] = new bucket;
         (*buckets[0]).contents = new T[bucket_size];
     }
-    FastDynamic(const FastDynamic<T> &old)
+    FastDynamic(const FastDynamic<T>& old)
     {
         this->bucket_size = bucket_size;
         bucket_count = 1;
@@ -39,7 +40,8 @@ public:
     }
     void SetContainer_size(size_t newsize) // will delete all contents use constructor instead if possible
     {
-        for(size_t i = 0; i < bucket_count; i++) {
+        for(size_t i = 0; i < bucket_count; i++)
+        {
             delete [](*buckets[i]).contents;
             delete buckets[i];
         }
@@ -54,7 +56,8 @@ public:
     }
     ~FastDynamic()
     {
-        for(size_t i = 0; i < bucket_count; i++) {
+        for(size_t i = 0; i < bucket_count; i++)
+        {
             delete [](*buckets[i]).contents;
             delete buckets[i];
         }
@@ -65,22 +68,25 @@ public:
     {
         SetContainer_size(bucket_size);
     }
-    T &operator[](size_t index)
+    T& operator[](size_t index)
     {
         size_t bucket_index = index / bucket_size;
         size_t entry = index % bucket_size;
 
-        if(bucket_index + 1 > bucket_count) { // resize array
-            bucket **tmparray = buckets;
+        if(bucket_index + 1 > bucket_count)   // resize array
+        {
+            bucket** tmparray = buckets;
             buckets = new bucket*[bucket_index + 1];
 
-            for(size_t i = 0; i < bucket_count; i++) {
+            for(size_t i = 0; i < bucket_count; i++)
+            {
                 buckets[i] = tmparray[i];
             }
 
             delete [] tmparray;
 
-            for(size_t i = bucket_count; i < bucket_index + 1; i++) {
+            for(size_t i = bucket_count; i < bucket_index + 1; i++)
+            {
                 buckets[i] = new bucket;
                 (*buckets[i]).contents = new T[bucket_size];
             }
@@ -90,22 +96,24 @@ public:
 
         return (*buckets[bucket_index]).contents[entry];
     }
-    T *GetBucket(int bucketnum)
+    T* GetBucket(int bucketnum)
     {
         return (*buckets[bucketnum]).contents;
     }
-    void CopyToStatic(T *staticarray, size_t count)
+    void CopyToStatic(T* staticarray, size_t count)
     {
-        if(count == 0) {
+        if(count == 0)
+        {
             return;
         }
 
         size_t numBuckets = count / bucket_size;
         size_t leftover = count % bucket_size;
-        T *buf = staticarray;
+        T* buf = staticarray;
         size_t Bsize = bucket_size * sizeof(T);
 
-        for(size_t i = 0; i < numBuckets; i++) {
+        for(size_t i = 0; i < numBuckets; i++)
+        {
             memcpy(buf, (*buckets[i]).contents, Bsize);
             buf += bucket_size;
         }
@@ -115,4 +123,3 @@ public:
     }
 };
 #endif
-

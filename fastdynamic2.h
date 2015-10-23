@@ -9,7 +9,7 @@
 template <class T>
 class FastDynamic //array that expands when it runs out of bounds
 {
-    T *contents;
+    T* contents;
 public:
     size_t increaseSize; // in bytes so numnew*contentssize in the SetContainer_size
     size_t currentLength; // not how many entries have been written just how many have been allocated
@@ -17,15 +17,15 @@ public:
     FastDynamic(size_t increaseSize)
     {
         this->increaseSize = increaseSize;
-        contents = (T *)malloc(this->increaseSize * sizeof(T));
+        contents = (T*)malloc(this->increaseSize * sizeof(T));
         currentLength = increaseSize;
         currentByteLength = this->increaseSize * sizeof(T);
 
     }
-    FastDynamic(const FastDynamic<T> &old) // this will differ as much as that it will copy while the old one didn't
+    FastDynamic(const FastDynamic<T>& old) // this will differ as much as that it will copy while the old one didn't
     {
         this->increaseSize = old.increaseSize;
-        contents = (T *)malloc(old.currentByteLength);
+        contents = (T*)malloc(old.currentByteLength);
         currentLength = old.currentLength;
         currentByteLength = old.currentByteLength;
         old.CopyToStatic(contents, currentLength);
@@ -33,7 +33,7 @@ public:
     FastDynamic()
     {
         increaseSize = DEFAULT_CONTAINER_SIZE;
-        contents = (T *)malloc(increaseSize * sizeof(T));
+        contents = (T*)malloc(increaseSize * sizeof(T));
         currentLength = DEFAULT_CONTAINER_SIZE;
         currentByteLength = increaseSize * sizeof(T);
     }
@@ -43,27 +43,30 @@ public:
     }
     ~FastDynamic()
     {
-        if(contents) {
+        if(contents)
+        {
             free(contents);
         }
     }
     void Clear()
     {
-        if(contents) {
+        if(contents)
+        {
             free(contents);
         }
 
-        contents = (T *)malloc(increaseSize * sizeof(T));
+        contents = (T*)malloc(increaseSize * sizeof(T));
         currentLength = increaseSize;
         currentByteLength = increaseSize * sizeof(T);
     }
-    T &operator[](size_t index)
+    T& operator[](size_t index)
     {
-        if(index >= currentLength) {
+        if(index >= currentLength)
+        {
             size_t newsize = (index / increaseSize) + 1;
             newsize *= increaseSize;
             //printf("currentLength:%u  newsize:%u index:%u increaseSize:%i\n", currentLength, newsize, index, increaseSize);
-            T *tmp = (T *)realloc(contents, newsize * sizeof(T));
+            T* tmp = (T*)realloc(contents, newsize * sizeof(T));
             contents = tmp;
             currentLength = newsize;
             currentByteLength = newsize * sizeof(T);
@@ -71,17 +74,19 @@ public:
 
         return contents[index];
     }
-    T *GetBucket(int bucketnum) // tbh worthless in this implementation
+    T* GetBucket(int bucketnum) // tbh worthless in this implementation
     {
         return contents[bucketnum / increaseSize / sizeof(T)];
     }
-    void CopyToStatic(T *staticarray, size_t count)
+    void CopyToStatic(T* staticarray, size_t count)
     {
-        if(count == 0) {
+        if(count == 0)
+        {
             return;
         }
 
-        if(count > currentLength) {
+        if(count > currentLength)
+        {
             count = currentLength;
         }
 
@@ -89,4 +94,3 @@ public:
     }
 };
 #endif
-

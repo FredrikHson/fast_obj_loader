@@ -4,7 +4,7 @@
 #include "fastdynamic2.h"
 
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
     int timestoload = 1;
 
@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
 
     for(int i = 0; i < timestoload; i++)
     {
-        obj *testmesh = loadObj(argv[1]);
+        obj* testmesh = loadObj(argv[1]);
 
         delete testmesh;
     }

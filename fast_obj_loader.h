@@ -3,35 +3,40 @@
 
 #include <stdlib.h>
 
-struct vec2 {
+struct vec2
+{
     float x, y;
 };
 
-struct vec3 {
+struct vec3
+{
     float x, y, z;
 };
 
-struct face {
+struct face
+{
     unsigned int verts[4];
     unsigned int normals[4];
     unsigned int uvs[4];
     bool quad;
 };
-struct triangle {
+struct triangle
+{
     unsigned int verts[3];
     unsigned int normals[3];
     unsigned int uvs[3];
 };
-struct obj {
+struct obj
+{
     unsigned int numverts;
     unsigned int numnormals;
     unsigned int numuvs;
     unsigned int numfaces;
 
-    vec3 *verts;
-    vec3 *normals;
-    vec2 *uvs;
-    triangle *faces;
+    vec3* verts;
+    vec3* normals;
+    vec2* uvs;
+    triangle* faces;
 
     obj()
     {
@@ -47,25 +52,28 @@ struct obj {
     }
     ~obj()
     {
-        if(verts) {
+        if(verts)
+        {
             free(verts);
         }
 
-        if(normals) {
+        if(normals)
+        {
             free(normals);
         }
 
-        if(uvs) {
+        if(uvs)
+        {
             free(uvs);
         }
 
-        if(faces) {
+        if(faces)
+        {
             free(faces);
         }
     }
 };
 
-obj *loadObj(const char *filename);
-void writeObj(const char *filename, obj &input);
+obj* loadObj(const char* filename);
+void writeObj(const char* filename, obj& input);
 #endif
-
