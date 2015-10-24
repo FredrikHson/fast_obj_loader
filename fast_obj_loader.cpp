@@ -3,10 +3,10 @@
 #include <stdlib.h>
 #include "fastdynamic2.h"
 #ifdef _OPENMP
-    #include <omp.h>
+#include <omp.h>
 #else
-    #define omp_get_thread_num() 0
-    #define omp_get_num_threads() 1
+#define omp_get_thread_num() 0
+#define omp_get_num_threads() 1
 #endif
 #include <time.h>
 #include <string.h>
@@ -64,40 +64,40 @@ unsigned int getNextFaceNumber(char* line, size_t& offset, unsigned char& type, 
     return output;
 }
 /*
-void triangulate(obj *mesh)
+   void triangulate(obj *mesh)
+   {
+   if(mesh == 0)
+   {
+   return;
+   }
+
+// first count how many real faces will be needed
+
+#pragma omp parallel
 {
-    if(mesh == 0)
-    {
-        return;
-    }
+size_t numTris = 0;
+#pragma omp for reduction(+:numTris)
 
-    // first count how many real faces will be needed
+for(size_t i = 0; i < mesh->numfaces; i++)
+{
+if(mesh->faces[i].quad)
+{
+numTris += 2;
+}
+else
+{
+numTris += 1;
+}
+}
 
-    #pragma omp parallel
-    {
-        size_t numTris = 0;
-        #pragma omp for reduction(+:numTris)
+#pragma omp single
+{
 
-        for(size_t i = 0; i < mesh->numfaces; i++)
-        {
-            if(mesh->faces[i].quad)
-            {
-                numTris += 2;
-            }
-            else
-            {
-                numTris += 1;
-            }
-        }
-
-        #pragma omp single
-        {
-
-        }
-    }
+}
+}
 }
 */
-// how much it should read at once to reduce the memory usage
+                // how much it should read at once to reduce the memory usage
 #define MEMORYOVERHEAD 1048576
 #define CONTAINER_SIZE 8192
 
@@ -147,11 +147,11 @@ obj* loadObj(const char* filename)
         size_t* lineends;
         FastDynamic<size_t>* tmpends;
         size_t* numtmpends;
-        #pragma omp parallel // first get line ends so they can be parsed in parallel
+#pragma omp parallel // first get line ends so they can be parsed in parallel
         {
             numthreads = omp_get_num_threads();
             int threadid = omp_get_thread_num();
-            #pragma omp single
+#pragma omp single
             {
                 tmpends = new FastDynamic<size_t>[numthreads];
                 numtmpends = new size_t[numthreads];
@@ -162,7 +162,7 @@ obj* loadObj(const char* filename)
                     numtmpends[i] = 0;
                 }
             }
-            #pragma omp for reduction(+:linecount,numEnds)
+#pragma omp for reduction(+:linecount,numEnds)
 
             for(size_t i = 0; i < bufferLength; i++)
             {
@@ -175,12 +175,12 @@ obj* loadObj(const char* filename)
                 }
             }
 
-            #pragma omp single
+#pragma omp single
             {
                 lineends = new size_t[numEnds + 2];
                 lineends[0] = -1; // set to -1(max unsigned int) cause the read function later does a +1 to get around the \n
             }
-            #pragma omp for
+#pragma omp for
 
             for(int i = 0; i < numthreads; i++)
             {
@@ -194,7 +194,7 @@ obj* loadObj(const char* filename)
                 tmpends[i].CopyToStatic(&lineends[offset], numtmpends[i]);
             }
 
-            #pragma omp single
+#pragma omp single
             {
                 fileoffset += lineends[numEnds - 1];
                 delete [] numtmpends;
@@ -209,12 +209,12 @@ obj* loadObj(const char* filename)
         size_t* numtmpnormals;
         size_t* numtmpuvs;
         size_t* numtmpfaces;
-        #pragma omp parallel
+#pragma omp parallel
         {
             // read verts for now
             numthreads = omp_get_num_threads();
             int threadid = omp_get_thread_num();
-            #pragma omp single
+#pragma omp single
             {
                 tmpverts = new FastDynamic<vec3>[numthreads];
                 numtmpverts = new size_t[numthreads];
@@ -252,7 +252,7 @@ obj* loadObj(const char* filename)
                     numtmpfaces[i] = 0;
                 }
             }
-            #pragma omp for reduction(+:numverts,numfaces,numnormals,numuvs)
+#pragma omp for reduction(+:numverts,numfaces,numnormals,numuvs)
 
             for(int i = 1; i < numEnds; i++)
             {
@@ -367,17 +367,17 @@ obj* loadObj(const char* filename)
                     }
 
 
-                    currenttri.verts[0] = Face.verts[0];
-                    currenttri.verts[1] = Face.verts[1];
-                    currenttri.verts[2] = Face.verts[2];
+                    currenttri.verts[0] = Face.verts[0] - 1;
+                    currenttri.verts[1] = Face.verts[1] - 1;
+                    currenttri.verts[2] = Face.verts[2] - 1;
 
-                    currenttri.uvs[0] = Face.uvs[0];
-                    currenttri.uvs[1] = Face.uvs[1];
-                    currenttri.uvs[2] = Face.uvs[2];
+                    currenttri.uvs[0] = Face.uvs[0] - 1;
+                    currenttri.uvs[1] = Face.uvs[1] - 1;
+                    currenttri.uvs[2] = Face.uvs[2] - 1;
 
-                    currenttri.normals[0] = Face.normals[0];
-                    currenttri.normals[1] = Face.normals[1];
-                    currenttri.normals[2] = Face.normals[2];
+                    currenttri.normals[0] = Face.normals[0] - 1;
+                    currenttri.normals[1] = Face.normals[1] - 1;
+                    currenttri.normals[2] = Face.normals[2] - 1;
 
                     if(v[0] == 4)
                     {
@@ -385,22 +385,22 @@ obj* loadObj(const char* filename)
                         numtmpfaces[threadid]++;
                         numfaces++;
 
-                        currenttri2.verts[0] = Face.verts[2];
-                        currenttri2.verts[1] = Face.verts[3];
-                        currenttri2.verts[2] = Face.verts[0];
+                        currenttri2.verts[0] = Face.verts[2] - 1;
+                        currenttri2.verts[1] = Face.verts[3] - 1;
+                        currenttri2.verts[2] = Face.verts[0] - 1;
 
-                        currenttri2.uvs[0] = Face.uvs[2];
-                        currenttri2.uvs[1] = Face.uvs[3];
-                        currenttri2.uvs[2] = Face.uvs[0];
+                        currenttri2.uvs[0] = Face.uvs[2] - 1;
+                        currenttri2.uvs[1] = Face.uvs[3] - 1;
+                        currenttri2.uvs[2] = Face.uvs[0] - 1;
 
-                        currenttri2.normals[0] = Face.normals[2];
-                        currenttri2.normals[1] = Face.normals[3];
-                        currenttri2.normals[2] = Face.normals[0];
+                        currenttri2.normals[0] = Face.normals[2] - 1;
+                        currenttri2.normals[1] = Face.normals[3] - 1;
+                        currenttri2.normals[2] = Face.normals[0] - 1;
                     }
                 }
             }
 
-            #pragma omp single
+#pragma omp single
             {
                 if(numverts != 0)
                 {
@@ -454,7 +454,7 @@ obj* loadObj(const char* filename)
                     }
                 }
             }
-            #pragma omp for
+#pragma omp for
 
             for(int i = 0; i < numthreads; i++)
             {
@@ -468,12 +468,12 @@ obj* loadObj(const char* filename)
                 tmpverts[i].CopyToStatic(&(output->verts[offset]), numtmpverts[i]);
             }
 
-            #pragma omp single
+#pragma omp single
             {
                 delete [] tmpverts;
                 delete [] numtmpverts;
             }
-            #pragma omp for
+#pragma omp for
 
             for(int i = 0; i < numthreads; i++)
             {
@@ -487,12 +487,12 @@ obj* loadObj(const char* filename)
                 tmpnormals[i].CopyToStatic(&(output->normals[offset]), numtmpnormals[i]);
             }
 
-            #pragma omp single
+#pragma omp single
             {
                 delete [] tmpnormals;
                 delete [] numtmpnormals;
             }
-            #pragma omp for
+#pragma omp for
 
             for(int i = 0; i < numthreads; i++)
             {
@@ -506,12 +506,12 @@ obj* loadObj(const char* filename)
                 tmpuvs[i].CopyToStatic(&(output->uvs[offset]), numtmpuvs[i]);
             }
 
-            #pragma omp single
+#pragma omp single
             {
                 delete [] tmpuvs;
                 delete [] numtmpuvs;
             }
-            #pragma omp for
+#pragma omp for
 
             for(int i = 0; i < numthreads; i++)
             {
@@ -525,13 +525,13 @@ obj* loadObj(const char* filename)
                 tmpfaces[i].CopyToStatic(&(output->faces[offset]), numtmpfaces[i]);
             }
 
-            #pragma omp single
+#pragma omp single
             {
 
                 delete [] tmpfaces;
                 delete [] numtmpfaces;
             }
-            #pragma omp single
+#pragma omp single
             {
                 output->numverts += numverts;
                 output->numuvs += numuvs;
@@ -596,9 +596,9 @@ void writeObj(const char* filename, obj& input)
         if(input.numnormals == 0 && input.numuvs == 0)
         {
             fprintf(f, "f %u %u %u",
-                    input.faces[i].verts[0],
-                    input.faces[i].verts[1],
-                    input.faces[i].verts[2]
+                    input.faces[i].verts[0] + 1,
+                    input.faces[i].verts[1] + 1,
+                    input.faces[i].verts[2] + 1
                    );
 
             //if(input.faces[i].quad)
@@ -611,18 +611,18 @@ void writeObj(const char* filename, obj& input)
         else if(input.numnormals == 0 && input.numuvs != 0)
         {
             fprintf(f, "f %u/%u %u/%u %u/%u",
-                    input.faces[i].verts[0],
-                    input.faces[i].uvs[0],
-                    input.faces[i].verts[1],
-                    input.faces[i].uvs[1],
-                    input.faces[i].verts[2],
-                    input.faces[i].uvs[2]
+                    input.faces[i].verts[0] + 1,
+                    input.faces[i].uvs[0] + 1,
+                    input.faces[i].verts[1] + 1,
+                    input.faces[i].uvs[1] + 1,
+                    input.faces[i].verts[2] + 1,
+                    input.faces[i].uvs[2] + 1
                    );
 
             //if(input.faces[i].quad)
             //{
             //fprintf(f, " %u/%u",
-            //input.faces[i].verts[3],
+            //input.faces[i].verts[3] + 1,
             //input.faces[i].uvs[3]
             //);
             //}
@@ -630,18 +630,18 @@ void writeObj(const char* filename, obj& input)
         else if(input.numnormals != 0 && input.numuvs == 0)
         {
             fprintf(f, "f %u//%u %u//%u %u//%u",
-                    input.faces[i].verts[0],
-                    input.faces[i].normals[0],
-                    input.faces[i].verts[1],
-                    input.faces[i].normals[1],
-                    input.faces[i].verts[2],
-                    input.faces[i].normals[2]
+                    input.faces[i].verts[0] + 1,
+                    input.faces[i].normals[0] + 1,
+                    input.faces[i].verts[1] + 1,
+                    input.faces[i].normals[1] + 1,
+                    input.faces[i].verts[2] + 1,
+                    input.faces[i].normals[2] + 1
                    );
 
             //if(input.faces[i].quad)
             //{
             //fprintf(f, " %u//%u",
-            //input.faces[i].verts[3],
+            //input.faces[i].verts[3] + 1,
             //input.faces[i].normals[3]
             //);
             //}
@@ -649,15 +649,15 @@ void writeObj(const char* filename, obj& input)
         else if(input.numnormals != 0 && input.numuvs != 0)
         {
             fprintf(f, "f %u/%u/%u %u/%u/%u %u/%u/%u",
-                    input.faces[i].verts[0],
-                    input.faces[i].uvs[0],
-                    input.faces[i].normals[0],
-                    input.faces[i].verts[1],
-                    input.faces[i].uvs[1],
-                    input.faces[i].normals[1],
-                    input.faces[i].verts[2],
-                    input.faces[i].uvs[2],
-                    input.faces[i].normals[2]
+                    input.faces[i].verts[0] + 1,
+                    input.faces[i].uvs[0] + 1,
+                    input.faces[i].normals[0] + 1,
+                    input.faces[i].verts[1] + 1,
+                    input.faces[i].uvs[1] + 1,
+                    input.faces[i].normals[1] + 1,
+                    input.faces[i].verts[2] + 1,
+                    input.faces[i].uvs[2] + 1,
+                    input.faces[i].normals[2] + 1
                    );
 
             //if(input.faces[i].quad)
