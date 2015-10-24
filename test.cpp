@@ -27,8 +27,19 @@ int main(int argc, char* argv[])
     for(int i = 0; i < timestoload; i++)
     {
         obj* testmesh = loadObj(argv[1]);
+        for(int j=0;j<testmesh->numfaces;j++)
+        {
 
+            fprintf(stdout,"%i %i %i\n",testmesh->faces[j].verts[0],testmesh->faces[j].verts[1],testmesh->faces[j].verts[2]);
+        }
+        obj* testmesh2 = ObjMakeUniqueFullVerts(testmesh);
+        for(int j=0;j<testmesh2->numfaces;j++)
+        {
+
+            fprintf(stdout,"%i %i %i\n",testmesh2->faces[j].verts[0],testmesh2->faces[j].verts[1],testmesh2->faces[j].verts[2]);
+        }
         delete testmesh;
+        delete testmesh2;
     }
 
     clock_gettime(CLOCK_REALTIME, &stop);

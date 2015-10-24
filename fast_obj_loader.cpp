@@ -3,10 +3,10 @@
 #include <stdlib.h>
 #include "fastdynamic2.h"
 #ifdef _OPENMP
-#include <omp.h>
+    #include <omp.h>
 #else
-#define omp_get_thread_num() 0
-#define omp_get_num_threads() 1
+    #define omp_get_thread_num() 0
+    #define omp_get_num_threads() 1
 #endif
 #include <time.h>
 #include <string.h>
@@ -97,7 +97,7 @@ numTris += 1;
 }
 }
 */
-                // how much it should read at once to reduce the memory usage
+// how much it should read at once to reduce the memory usage
 #define MEMORYOVERHEAD 1048576
 #define CONTAINER_SIZE 8192
 
@@ -147,11 +147,11 @@ obj* loadObj(const char* filename)
         size_t* lineends;
         FastDynamic<size_t>* tmpends;
         size_t* numtmpends;
-#pragma omp parallel // first get line ends so they can be parsed in parallel
+        #pragma omp parallel // first get line ends so they can be parsed in parallel
         {
             numthreads = omp_get_num_threads();
             int threadid = omp_get_thread_num();
-#pragma omp single
+            #pragma omp single
             {
                 tmpends = new FastDynamic<size_t>[numthreads];
                 numtmpends = new size_t[numthreads];
@@ -162,7 +162,7 @@ obj* loadObj(const char* filename)
                     numtmpends[i] = 0;
                 }
             }
-#pragma omp for reduction(+:linecount,numEnds)
+            #pragma omp for reduction(+:linecount,numEnds)
 
             for(size_t i = 0; i < bufferLength; i++)
             {
@@ -175,12 +175,12 @@ obj* loadObj(const char* filename)
                 }
             }
 
-#pragma omp single
+            #pragma omp single
             {
                 lineends = new size_t[numEnds + 2];
                 lineends[0] = -1; // set to -1(max unsigned int) cause the read function later does a +1 to get around the \n
             }
-#pragma omp for
+            #pragma omp for
 
             for(int i = 0; i < numthreads; i++)
             {
@@ -194,7 +194,7 @@ obj* loadObj(const char* filename)
                 tmpends[i].CopyToStatic(&lineends[offset], numtmpends[i]);
             }
 
-#pragma omp single
+            #pragma omp single
             {
                 fileoffset += lineends[numEnds - 1];
                 delete [] numtmpends;
@@ -209,12 +209,12 @@ obj* loadObj(const char* filename)
         size_t* numtmpnormals;
         size_t* numtmpuvs;
         size_t* numtmpfaces;
-#pragma omp parallel
+        #pragma omp parallel
         {
             // read verts for now
             numthreads = omp_get_num_threads();
             int threadid = omp_get_thread_num();
-#pragma omp single
+            #pragma omp single
             {
                 tmpverts = new FastDynamic<vec3>[numthreads];
                 numtmpverts = new size_t[numthreads];
@@ -252,7 +252,7 @@ obj* loadObj(const char* filename)
                     numtmpfaces[i] = 0;
                 }
             }
-#pragma omp for reduction(+:numverts,numfaces,numnormals,numuvs)
+            #pragma omp for reduction(+:numverts,numfaces,numnormals,numuvs)
 
             for(int i = 1; i < numEnds; i++)
             {
@@ -400,7 +400,7 @@ obj* loadObj(const char* filename)
                 }
             }
 
-#pragma omp single
+            #pragma omp single
             {
                 if(numverts != 0)
                 {
@@ -454,7 +454,7 @@ obj* loadObj(const char* filename)
                     }
                 }
             }
-#pragma omp for
+            #pragma omp for
 
             for(int i = 0; i < numthreads; i++)
             {
@@ -468,12 +468,12 @@ obj* loadObj(const char* filename)
                 tmpverts[i].CopyToStatic(&(output->verts[offset]), numtmpverts[i]);
             }
 
-#pragma omp single
+            #pragma omp single
             {
                 delete [] tmpverts;
                 delete [] numtmpverts;
             }
-#pragma omp for
+            #pragma omp for
 
             for(int i = 0; i < numthreads; i++)
             {
@@ -487,12 +487,12 @@ obj* loadObj(const char* filename)
                 tmpnormals[i].CopyToStatic(&(output->normals[offset]), numtmpnormals[i]);
             }
 
-#pragma omp single
+            #pragma omp single
             {
                 delete [] tmpnormals;
                 delete [] numtmpnormals;
             }
-#pragma omp for
+            #pragma omp for
 
             for(int i = 0; i < numthreads; i++)
             {
@@ -506,12 +506,12 @@ obj* loadObj(const char* filename)
                 tmpuvs[i].CopyToStatic(&(output->uvs[offset]), numtmpuvs[i]);
             }
 
-#pragma omp single
+            #pragma omp single
             {
                 delete [] tmpuvs;
                 delete [] numtmpuvs;
             }
-#pragma omp for
+            #pragma omp for
 
             for(int i = 0; i < numthreads; i++)
             {
@@ -525,13 +525,13 @@ obj* loadObj(const char* filename)
                 tmpfaces[i].CopyToStatic(&(output->faces[offset]), numtmpfaces[i]);
             }
 
-#pragma omp single
+            #pragma omp single
             {
 
                 delete [] tmpfaces;
                 delete [] numtmpfaces;
             }
-#pragma omp single
+            #pragma omp single
             {
                 output->numverts += numverts;
                 output->numuvs += numuvs;
@@ -670,4 +670,48 @@ void writeObj(const char* filename, obj& input)
     }
 
     fclose(f);
+}
+
+
+obj* ObjMakeUniqueFullVerts(const obj* orig) // simple and wastefull TODO:fix that
+{
+    obj* output              = new obj;
+    unsigned int numNewVerts = orig->numfaces * 3;
+    output->verts            = new vec3[numNewVerts];
+    output->normals          = new vec3[numNewVerts];
+    output->uvs              = new vec2[numNewVerts];
+    output->faces = new triangle[orig->numfaces];
+    output->numfaces         = orig->numfaces;
+    output->numverts         = numNewVerts;
+    output->numuvs           = numNewVerts;
+    output->numnormals       = numNewVerts;
+
+    for(unsigned int i = 0; i < orig->numfaces; i++)
+    {
+        unsigned int index = i * 3;
+        triangle* tri = &orig->faces[i];
+        output->verts[index] = orig->verts[tri->verts[0]];
+        output->verts[index + 1] = orig->verts[tri->verts[1]];
+        output->verts[index + 2] = orig->verts[tri->verts[2]];
+
+        if(orig->numuvs)
+        {
+            output->uvs[index] = orig->uvs[tri->uvs[0]];
+            output->uvs[index + 1] = orig->uvs[tri->uvs[1]];
+            output->uvs[index + 2] = orig->uvs[tri->uvs[2]];
+        }
+
+        if(orig->numnormals)
+        {
+            output->normals[index] = orig->normals[tri->normals[0]];
+            output->normals[index + 1] = orig->normals[tri->normals[1]];
+            output->normals[index + 2] = orig->normals[tri->normals[2]];
+        }
+
+        output->faces[i].verts[0] = index;
+        output->faces[i].verts[1] = index + 1;
+        output->faces[i].verts[2] = index + 2;
+    }
+
+    return output;
 }
