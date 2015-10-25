@@ -673,45 +673,66 @@ void writeObj(const char* filename, obj& input)
 }
 
 
-obj* ObjMakeUniqueFullVerts(const obj* orig) // simple and wastefull TODO:fix that
+obj* ObjMakeUniqueFullVerts(const obj* orig)
 {
     obj* output              = new obj;
-    unsigned int numNewVerts = orig->numfaces * 3;
-    output->verts            = new vec3[numNewVerts];
-    output->normals          = new vec3[numNewVerts];
-    output->uvs              = new vec2[numNewVerts];
-    output->faces = new triangle[orig->numfaces];
+    unsigned int numtmpverts = 0;
+    unsigned int* tmpverts   = new unsigned int[orig->numfaces * 9]; // pos,normal,uv
+    output->faces            = new triangle[orig->numfaces];
     output->numfaces         = orig->numfaces;
-    output->numverts         = numNewVerts;
-    output->numuvs           = numNewVerts;
-    output->numnormals       = numNewVerts;
 
     for(unsigned int i = 0; i < orig->numfaces; i++)
     {
-        unsigned int index = i * 3;
-        triangle* tri = &orig->faces[i];
-        output->verts[index] = orig->verts[tri->verts[0]];
-        output->verts[index + 1] = orig->verts[tri->verts[1]];
-        output->verts[index + 2] = orig->verts[tri->verts[2]];
-
-        if(orig->numuvs)
+        for(unsigned int j = 0; j < 3; j++)
         {
-            output->uvs[index] = orig->uvs[tri->uvs[0]];
-            output->uvs[index + 1] = orig->uvs[tri->uvs[1]];
-            output->uvs[index + 2] = orig->uvs[tri->uvs[2]];
-        }
+            bool found = false;
 
-        if(orig->numnormals)
-        {
-            output->normals[index] = orig->normals[tri->normals[0]];
-            output->normals[index + 1] = orig->normals[tri->normals[1]];
-            output->normals[index + 2] = orig->normals[tri->normals[2]];
-        }
+            for(unsigned int k = 0; k < numtmpverts; k++)
+            {
+                unsigned int offset = k * 3;
 
-        output->faces[i].verts[0] = index;
-        output->faces[i].verts[1] = index + 1;
-        output->faces[i].verts[2] = index + 2;
+                if(tmpverts[offset] == orig->faces[i].verts[j] &&
+                        tmpverts[offset + 1] == orig->faces[i].normals[j] &&
+                        tmpverts[offset + 2] == orig->faces[i].uvs[j])
+                {
+                    found = true;
+                    output->faces[i].verts[j] = k;
+                    output->faces[i].normals[j] = k;
+                    output->faces[i].uvs[j] = k;
+                    break;
+                }
+            }
+
+            if(!found)
+            {
+                unsigned int offset  = numtmpverts * 3;
+                tmpverts[offset]     = orig->faces[i].verts[j];
+                tmpverts[offset + 1] = orig->faces[i].normals[j];
+                tmpverts[offset + 2] = orig->faces[i].uvs[j];
+                output->faces[i].verts[j] = numtmpverts;
+                output->faces[i].normals[j] = numtmpverts;
+                output->faces[i].uvs[j] = numtmpverts;
+                numtmpverts++;
+            }
+        }
     }
+
+    output->verts            = new vec3[numtmpverts];
+    output->normals          = new vec3[numtmpverts];
+    output->uvs              = new vec2[numtmpverts];
+    output->numverts         = numtmpverts;
+    output->numuvs           = numtmpverts;
+    output->numnormals       = numtmpverts;
+
+    // create all the new verts
+    for(unsigned int i = 0; i < numtmpverts; i++)
+    {
+        unsigned int offset = i * 3;
+        output->verts[i]    = orig->verts[tmpverts[offset]];
+        output->normals[i]  = orig->normals[tmpverts[offset + 1]];
+        output->uvs[i]      = orig->uvs[tmpverts[offset + 2]];
+    }
+
 
     return output;
 }
